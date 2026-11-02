@@ -33,6 +33,7 @@ Tested with Python 3.12, numpy 2.4, scipy 1.17, matplotlib, scikit-learn 1.9.
 |---|---|---|---|
 | `data/lonardoni2017_spont` | spontaneous activity of rat hippocampal cultures, 3Brain 4096-electrode CMOS-MEA, thresholded multi-unit activity | Lonardoni et al. 2017, *PLoS Comput Biol* 13:e1005672; Zenodo 4977727 | CC0 |
 | `data/lonardoni2017_drug` | same cultures, basal vs bicuculline / APV | same | CC0 |
+| Allen Brain Observatory, Visual Coding Neuropixels | streamed from DANDI 000021 by `allen_rest_vs_task.py` (no download needed) | Allen Institute; DANDI 000021 | CC BY 4.0 |
 | `data/stringer2019_neuropixels` | eight-probe Neuropixels, 3 mice, spontaneous period | Stringer et al. 2019, *Science* 364:eaav7893; figshare 10.25378/janelia.7739750 | CC BY-NC 4.0 |
 
 ## Code map
@@ -66,12 +67,16 @@ Tested with Python 3.12, numpy 2.4, scipy 1.17, matplotlib, scikit-learn 1.9.
 | Fig. 4 | `fig4_new.py`, using the results of `directionality_data.py`, `closure_test.py`, `directionality_sweep_spiking.py`, `excess_symmetry_cultures.py`, `invivo_stringer.py`; computes `results/iter_deep.npz` itself |
 | Suppl.: symmetry vs surrogate | `supp_symmetry.py` (figure); `real_data_rg.py`, `real_data_surrogate.py`, `null_autocorr_symmetry.py`, `excess_symmetry_sim.py` |
 | Suppl.: robustness (bin size, unit selection) | `robustness.py` |
+| Partial observation (simulation, cultures, Allen in vivo) | `fig_partial_observation.py`, using `partial_observation.py`, `partial_observation_cultures.py`, `allen_rest_vs_task.py` |
+| Cover-letter figure | `cover_figure.py` |
+| Suppl.: in vivo single probes | `invivo_local.py` |
 | Suppl.: perturbation transfer | `perturbation_transfer.py` (args: trials, amplitude, network) |
 | Suppl.: pairing variants, nMF vs ML | `pairing_tests.py` |
 
 **Exploratory analyses with negative or inconclusive results.** They are kept for completeness and are not used in the paper.
 - `invivo_areas.py`, `invivo_thalamus.py`: inter-area grouping and thalamo-cortical directionality in the mice. Not significant against shifted surrogates.
 - `drug_prediction.py`: in-silico bicuculline/APV on the culture model vs the observed drug response. Not robust across channel subsets.
+- `dandi_closure.py`: DANDI 002020 MaxOne cultures. At 10 ms the one-step predictability is about zero (sparse activity, slow drifts), so closure is undefined; not used.
 - `directionality_sweep_hopfield.py`: directedness sweep on the Hopfield network. The closure saturates for every structured rule, so the sweep does not discriminate between them.
 
 ## Conventions

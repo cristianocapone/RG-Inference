@@ -2,3 +2,6 @@ numpy>=2.0
 scipy>=1.12
 matplotlib>=3.8
 scikit-learn>=1.4
+remfile>=0.1
+dandi>=0.60
+h5py>=3.9

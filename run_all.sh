@@ -37,6 +37,14 @@ $PY directionality_data.py                                  # closure advantage 
 # --- Figure 4 (uses the results above) ---
 $PY fig4_new.py
 
+# --- partial observation: simulation, cultures, Allen in vivo (rest vs stimuli, streamed) ---
+$PY partial_observation.py                                  # ~5 min
+$PY partial_observation_cultures.py                         # ~10 min
+$PY allen_rest_vs_task.py                                   # 32 sessions streamed from DANDI, ~1 h
+$PY fig_partial_observation.py
+$PY invivo_local.py
+$PY cover_figure.py
+
 # --- supplementary / controls ---
 $PY supp_symmetry.py                                        # symmetry of inferred J vs surrogate (spiking, cultures, mice)
 $PY real_data_rg.py

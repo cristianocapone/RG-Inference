@@ -1,0 +1,9 @@
+data/
+sim_cache/
+results/
+Figures/*
+!Figures/.gitkeep
+__pycache__/
+*.pyc
+.venv/
+.DS_Store

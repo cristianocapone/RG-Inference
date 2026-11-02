@@ -19,6 +19,8 @@ $PY repro_figures_v2.py                                     # ~10 min
 $PY repro_figure3.py                                        # N=512, mean-field inference
 $PY fig3_ml_rg.py sim_cache/seq1024_T100000.npy             # N=1024: grouping with exact ML (~15 min)
 $PY repro_figure3_ml.py                                     # N=1024: full figure with exact ML (~45 min)
+$PY fig3_publication.py                                     # Fig. 3 of the Nat Comm version
+$PY fig1_concept.py                                         # Fig. 1 of the Nat Comm version
 
 # --- spiking E/I networks (ground truth) ---
 $PY spiking_ei_rg.py                                        # no delay: Dale check vs bin size (~10 min)

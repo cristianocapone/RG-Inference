@@ -64,7 +64,7 @@ Tested with Python 3.12, numpy 2.4, scipy 1.17, matplotlib, scikit-learn 1.9.
 | Fig. 1 (concept, Nat Comm version) | `fig1_concept.py` |
 | Fig. 2 and Suppl. Fig. 1 (Hopfield variance scaling) | `repro_figures_v2.py` |
 | Fig. 3 (N = 512, mean field) | `repro_figure3.py` |
-| Fig. 3 (N = 1024, exact ML) | `fig3_ml_rg.py` (grouping), `repro_figure3_ml.py` (full figure) |
+| Fig. 3 (N = 1024, exact ML) | `repro_figure3_ml.py` (simulation, inference, stimulation; ~45 min), then `fig3_publication.py` (figure); `fig3_ml_rg.py` (grouping only) |
 | Fig. 4 | `fig4_new.py`, using the results of `directionality_data.py`, `closure_test.py`, `directionality_sweep_spiking.py`, `excess_symmetry_cultures.py`, `invivo_stringer.py`; computes `results/iter_deep.npz` itself |
 | Suppl.: symmetry vs surrogate | `supp_symmetry.py` (figure); `real_data_rg.py`, `real_data_surrogate.py`, `null_autocorr_symmetry.py`, `excess_symmetry_sim.py` |
 | Suppl.: robustness (bin size, unit selection) | `robustness.py` |

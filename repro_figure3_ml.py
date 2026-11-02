@@ -69,7 +69,7 @@ def main():
         print(f"{rule}: purity {comp.max(1).mean():.3f}, 2a/2b separation per block {np.round(sep, 2)}", flush=True)
         g, cv = F.tune_gain(Jk, hk, comp, np.random.default_rng(2), np.linspace(0.4, 1.4, 11))
         print(f"  gain* = {g:.2f}, CV = {cv:.2f}", flush=True)
-        Is = np.linspace(0, 8.0, 21)
+        Is = np.linspace(0, 12.0, 25)
         p3, p4, rasters = [], [], {}
         for I in Is:
             Sg = F.block_dynamics(Jk, hk, g, 20000, np.random.default_rng(3), I=F.stim_vector(comp, I))
@@ -79,10 +79,16 @@ def main():
             rasters[round(I, 2)] = Sg[:800]
         print("  P(3):", np.round(p3, 2))
         print("  P(4):", np.round(p4, 2), flush=True)
-        res[rule] = dict(J=Jk, comp=comp, Is=Is, p3=np.array(p3), p4=np.array(p4), rasters=rasters)
+        res[rule] = dict(J=Jk, h=hk, gain=g, comp=comp, Is=Is, p3=np.array(p3), p4=np.array(p4), rasters=rasters)
     os.makedirs("results", exist_ok=True)
-    np.savez("results/fig3_ml.npz", **{f"{r}/{k}": v for r in res for k, v in res[r].items() if k != "rasters"})
-    F.plot(J, S0, res)
+    out = {f"{r}/{k}": v for r in res for k, v in res[r].items() if k != "rasters"}
+    for r in res:                                          # keep the rasters used in the figure
+        for I, R in res[r]["rasters"].items():
+            out[f"{r}/raster/{I:g}"] = R
+    out["S0_snapshot"] = S0[:800]
+    out["J_true"] = J
+    np.savez_compressed("results/fig3_ml.npz", **out)
+    F.plot(J, S0, res, hi=8.0)
     shutil.move("Figures/Figure3_repro.png", "Figures/Figure3_repro_N1024.png")
     print("saved Figures/Figure3_repro_N1024.png")
 

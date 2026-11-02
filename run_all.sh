@@ -38,6 +38,7 @@ $PY directionality_data.py                                  # closure advantage 
 $PY fig4_new.py
 
 # --- supplementary / controls ---
+$PY supp_symmetry.py                                        # symmetry of inferred J vs surrogate (spiking, cultures, mice)
 $PY real_data_rg.py
 $PY real_data_surrogate.py
 $PY null_autocorr_symmetry.py

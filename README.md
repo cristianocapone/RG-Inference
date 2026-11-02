@@ -64,7 +64,7 @@ Tested with Python 3.12, numpy 2.4, scipy 1.17, matplotlib, scikit-learn 1.9.
 | Fig. 3 (N = 512, mean field) | `repro_figure3.py` |
 | Fig. 3 (N = 1024, exact ML) | `fig3_ml_rg.py` (grouping), `repro_figure3_ml.py` (full figure) |
 | Fig. 4 | `fig4_new.py`, using the results of `directionality_data.py`, `closure_test.py`, `directionality_sweep_spiking.py`, `excess_symmetry_cultures.py`, `invivo_stringer.py`; computes `results/iter_deep.npz` itself |
-| Suppl.: symmetry vs surrogate | `real_data_rg.py`, `real_data_surrogate.py`, `null_autocorr_symmetry.py`, `excess_symmetry_sim.py` |
+| Suppl.: symmetry vs surrogate | `supp_symmetry.py` (figure); `real_data_rg.py`, `real_data_surrogate.py`, `null_autocorr_symmetry.py`, `excess_symmetry_sim.py` |
 | Suppl.: robustness (bin size, unit selection) | `robustness.py` |
 | Suppl.: perturbation transfer | `perturbation_transfer.py` (args: trials, amplitude, network) |
 | Suppl.: pairing variants, nMF vs ML | `pairing_tests.py` |

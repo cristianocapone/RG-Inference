@@ -61,7 +61,8 @@ Tested with Python 3.12, numpy 2.4, scipy 1.17, matplotlib, scikit-learn 1.9.
 
 | paper | script |
 |---|---|
-| Fig. 1, Fig. 2 | `repro_figures_v2.py` |
+| Fig. 1 (concept, Nat Comm version) | `fig1_concept.py` |
+| Fig. 2 and Suppl. Fig. 1 (Hopfield variance scaling) | `repro_figures_v2.py` |
 | Fig. 3 (N = 512, mean field) | `repro_figure3.py` |
 | Fig. 3 (N = 1024, exact ML) | `fig3_ml_rg.py` (grouping), `repro_figure3_ml.py` (full figure) |
 | Fig. 4 | `fig4_new.py`, using the results of `directionality_data.py`, `closure_test.py`, `directionality_sweep_spiking.py`, `excess_symmetry_cultures.py`, `invivo_stringer.py`; computes `results/iter_deep.npz` itself |

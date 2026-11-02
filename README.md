@@ -80,3 +80,7 @@ Tested with Python 3.12, numpy 2.4, scipy 1.17, matplotlib, scikit-learn 1.9.
 - RG step 1 = original units (as in the original MATLAB code).
 - Block variables are averages over 2^k units.
 - Directedness of a recording = 1 − symmetry index of the lagged covariance D(1).
+
+## Licence
+
+Code: MIT (see `LICENSE`). The data sets keep their own licences (see the table above): CC0 for the cultures, CC BY-NC 4.0 for the Neuropixels recordings.

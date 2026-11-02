@@ -8,11 +8,11 @@ Three-panel figure for the cover letter (the basic idea in one row).
  (2) Ground truth (sequence network of Fig. 3, N = 1024, 64 blocks): stimulating A in
      the reduced model biases the transition towards A's target only when the model
      was reduced by inference (results/fig3_ml.npz from repro_figure3_ml.py).
- (3) Data: closure advantage of inference over correlation vs directedness of the
-     recorded activity, one point per independent recording (cultures, mice; DANDI
-     002020 cultures if their results exist).
-Inputs: results/fig3_ml.npz, results/closure.npz, results/cultures_metrics.npz,
-results/stringer_metrics.npz, optionally results/dandi_closure.npz.
+ (3) Data: closure advantage of inference over correlation vs the number of observed
+     electrodes in the cultures (random subsets), one line per culture coloured by its
+     directedness: the advantage needs both directional dynamics and enough of the
+     observed circuit (results/partial_observation_cultures.npz).
+Inputs: results/fig3_ml.npz, results/partial_observation_cultures.npz.
 Output: Figures/Cover_figure.png / .pdf.  Run from the folder holding results/.
 """
 
@@ -114,34 +114,23 @@ def panel_ground_truth(ax):
 
 
 def panel_data(ax):
-    cl = np.load("results/closure.npz")
-    cm = {"cultures": np.load("results/cultures_metrics.npz"), "mice": np.load("results/stringer_metrics.npz")}
-    xs, ys = [], []
-    sets = []
-    for grp, lst, mk, col, lab in [("cultures", CULT, "o", RED, "cultures, 4096-ch MEA"),
-                                   ("mice", MICE, "s", "#1f77b4", "mice, Neuropixels")]:
-        x = [1 - cm[grp][f"{n}/inference/real/sym_D"][0] for n in lst]
-        y = [np.nanmean((cl[f"{grp}/{n}/inference/closure"] - cl[f"{grp}/{n}/correlation/closure"])[1:7]) for n in lst]
-        sets.append((x, y, mk, col, lab, 60))
-    if os.path.exists("results/dandi_closure.npz"):
-        dd = np.load("results/dandi_closure.npz")
-        x = [dd[k][0] for k in dd.files]
-        y = [dd[k][1] for k in dd.files]
-        sets.append((x, y, "^", "#ff7f0e", "cultures, MaxOne MEA", 22))
-    for x, y, mk, col, lab, s in sets:                         # one style for all recordings
-        ax.scatter(x, y, marker="o", s=45, color="0.25", zorder=3, alpha=0.85)
-        xs += list(x)
-        ys += list(y)
-    c = np.polyfit(xs, ys, 1)
-    xx = np.linspace(min(xs), max(xs), 50)
-    ax.plot(xx, np.polyval(c, xx), "-", color=RED, lw=1.5, alpha=0.8)
-    rho, p = spearmanr(xs, ys)
+    """Cultures: advantage of inference vs number of observed electrodes (random
+    subsets), one line per culture coloured by its directedness."""
+    d = np.load("results/partial_observation_cultures.npz")
+    cults = sorted({k.split("/")[0] for k in d.files}, key=lambda c: int(c[1:]))
+    dirs = {c: np.mean([d[k][:, 0].mean() for k in d.files if k.startswith(c + "/")]) for c in cults}
+    norm = matplotlib.colors.Normalize(0.2, 0.75)
+    cmap = matplotlib.colormaps["viridis"]
+    for c in cults:
+        ns = sorted(int(k.split("/")[1]) for k in d.files if k.startswith(c + "/"))
+        ax.plot(ns, [d[f"{c}/{n}"][:, 2].mean() for n in ns], "o-", color=cmap(norm(dirs[c])), ms=3, lw=1.6)
+    ax.set_xscale("log", base=2)
     ax.axhline(0, color="0.7", ls=":")
-    ax.set_xlabel("directedness of the recorded activity")
-    ax.set_ylabel("advantage of inference over\ncorrelation (closure)")
-    ax.text(0.03, 0.97, f"Spearman $\\rho$ = {rho:.2f}, p = {p:.1g}, n = {len(xs)}",
-            transform=ax.transAxes, va="top", fontsize=8.5)
-    ax.set_title("3  Neural recordings", loc="left", fontsize=11, weight="bold")
+    ax.set_xlabel("observed electrodes")
+    ax.set_ylabel("advantage of inference\nover correlation (closure)")
+    sm = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
+    plt.colorbar(sm, ax=ax, fraction=0.05, pad=0.02, label="directedness of the activity")
+    ax.set_title("3  Data: needs directedness and enough circuit", loc="left", fontsize=11, weight="bold")
 
 
 def main():

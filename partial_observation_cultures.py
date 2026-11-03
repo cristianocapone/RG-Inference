@@ -17,20 +17,27 @@ from real_data_rg import load_culture
 from closure_test import rg_closure
 from rg_metrics import lagged_cov
 from spiking_ei_rg import symmetry
+from directedness import directedness
+
+LAGS = tuple(range(1, 31))
 
 CULT = ["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d15"]
 SIZES = [512, 256, 128, 64, 32]
 SEEDS = range(5)
-RULES = ["inference", "inference_out", "correlation"]
+RULES = ["inference", "inference_out", "correlation", "lagged_out"]
 
 
 def evaluate(B):
+    """[directedness (lags 1-30), adv inference, adv output, adv23 inference, adv23 output,
+    adv lagged_out, adv23 lagged_out, directedness lag 1, raw 1 - symmetry(D(1))]"""
     _, D = lagged_cov(B.astype(np.float32))
     L = int(np.log2(B.shape[1])) - 1
     cl = {r: rg_closure(B, r, L)["closure"] for r in RULES}
-    full = [float(np.nanmean((cl[r] - cl["correlation"])[1:L - 1])) for r in RULES[:2]]
-    d23 = [float(np.nanmean((cl[r] - cl["correlation"])[1:3])) for r in RULES[:2]]
-    return np.r_[1 - symmetry(D), full, d23]
+    adv = [r for r in RULES if r != "correlation"]
+    full = {r: float(np.nanmean((cl[r] - cl["correlation"])[1:L - 1])) for r in adv}
+    d23 = {r: float(np.nanmean((cl[r] - cl["correlation"])[1:3])) for r in adv}
+    return np.r_[directedness(B, LAGS)[0], full["inference"], full["inference_out"], d23["inference"], d23["inference_out"],
+                 full["lagged_out"], d23["lagged_out"], directedness(B)[0], 1 - symmetry(D)]
 
 
 def main():

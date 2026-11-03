@@ -30,13 +30,15 @@ import spiking_ei_rg as spk
 from repro_figures_v2 import infer_J
 from closure_test import rg_closure
 from rg_metrics import lagged_cov
+from directedness import directedness
 
 TAG = "d5j0.5_s0.15_Nref3000_wclu1.9"
 NETS = {"clustered": 0.0, "chain0.1": 0.1, "chain0.2": 0.2}
 FILES = {"clustered": "clustered", "chain0.1": "chain", "chain0.2": "chain0.2"}
 SIZES = [512, 256, 128, 64, 32]
 SEEDS = range(5)
-RULES = ["inference", "inference_out", "correlation"]
+RULES = ["inference", "inference_out", "correlation", "lagged_out"]
+LAGS = tuple(range(1, 31))
 
 
 def subset(rng, n):
@@ -45,9 +47,11 @@ def subset(rng, n):
 
 
 def evaluate(B, W):
+    """[directedness (lags 1-30), adv inference, adv output, corr(J, W), adv23 inference, adv23 output,
+    adv lagged_out, adv23 lagged_out, directedness lag 1, raw 1 - symmetry(D(1))]"""
     S = B.astype(np.float32)
     _, D = lagged_cov(S)
-    direct = 1 - spk.symmetry(D)
+    direct = directedness(B, LAGS)[0]
     J = infer_J(S, 0)
     off = ~np.eye(len(W), dtype=bool)
     fid = np.corrcoef(J[off], W[off])[0, 1]
@@ -56,7 +60,8 @@ def evaluate(B, W):
     adv = [float(np.nanmean((cl[r] - cl["correlation"])[1:L - 1])) for r in RULES[:2]]
     # same depth for every n: RG steps 2-3 only (removes the confound of shallower trajectories)
     adv23 = [float(np.nanmean((cl[r] - cl["correlation"])[1:3])) for r in RULES[:2]]
-    return np.r_[direct, adv, fid, adv23]
+    lag = [float(np.nanmean((cl["lagged_out"] - cl["correlation"])[a:b])) for a, b in ((1, L - 1), (1, 3))]
+    return np.r_[direct, adv, fid, adv23, lag, directedness(B)[0], 1 - spk.symmetry(D)]
 
 
 def main():

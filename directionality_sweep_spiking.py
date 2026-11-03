@@ -29,7 +29,7 @@ sys.argv = [sys.argv[0], "40", "0.5", "sweep"]
 import spiking_ei_rg as spk
 import perturbation_transfer as P
 from repro_figures_v2 import infer_J
-from closure_test import pairs5, closure
+from closure_test import pairs5, closure, FRAC
 from directionality_sweep_hopfield import oneshot_membership, pca_closure, COL
 from rg_metrics import lagged_cov
 from spiking_ei_rg import symmetry
@@ -47,11 +47,12 @@ def cache_name(c):
 
 def membership(S0, rule, level, seed=0):
     rng = np.random.default_rng(seed)
+    S0 = S0[:int(FRAC * len(S0))]                         # pairing from the training part only
     if rule == "oneshot":
         return oneshot_membership(infer_J(S0, 0), level)
     S, M = S0, np.eye(S0.shape[1], dtype=np.float32)
     for k in range(level):
-        J = infer_J(S, k)
+        J = infer_J(S, k) if rule.startswith("inference") else None
         p = pairs5(rule, S, J, rng)
         S = 0.5 * (S[:, p[:, 0]] + S[:, p[:, 1]])
         M = M[:, p[:, 0]] + M[:, p[:, 1]]

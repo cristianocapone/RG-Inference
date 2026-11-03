@@ -30,13 +30,26 @@ from real_data_rg import load_culture
 from invivo_stringer import bin_mouse, MICE
 import spiking_ei_rg as spk
 
-RULES5 = ["inference", "inference_in", "inference_out", "correlation", "random"]
+RULES5 = ["inference", "inference_in", "inference_out", "correlation", "lagged", "lagged_out", "random"]
 COL5 = {"inference": "#d62728", "inference_in": "#ff9896", "inference_out": "#8b0000",
-        "correlation": "#8c8c00", "random": "#4a7fd6"}
+        "correlation": "#8c8c00", "lagged": "#9467bd", "lagged_out": "#5e3c99", "random": "#4a7fd6"}
 L = 8
+FRAC = 0.8            # first 80% of the recording: pairing and fit; last 20%: evaluation
+RIDGES = (1e-3, 1e-2, 1e-1, 1.0)
+
+
+def lagged_corr(S):
+    """Model-free directional statistic: lag-1 cross-correlation R_ij = <dS_i(t+1) dS_j(t)> / (s_i s_j)."""
+    d = S - S.mean(0)
+    sd = d.std(0) + 1e-12
+    return (d[1:].T @ d[:-1]) / (len(S) - 1) / np.outer(sd, sd)
 
 
 def pairs5(rule, S, J, rng):
+    if rule in ("lagged", "lagged_out"):
+        J = lagged_corr(S)
+        np.fill_diagonal(J, 0)
+        rule = "inference" if rule == "lagged" else "inference_out"
     if rule in ("inference_in", "inference_out"):
         V = J if rule == "inference_in" else J.T
         V = V / (np.linalg.norm(V, axis=1, keepdims=True) + 1e-12)
@@ -46,15 +59,24 @@ def pairs5(rule, S, J, rng):
     return pairs_for(rule, S, J, rng)
 
 
-def ridge_r2(Xtr, Ytr, Xte, Yte, ridge=1e-3):
+def _fit(Xtr, Ytr, ridge):
     C = Xtr.T @ Xtr / len(Xtr)
     C += ridge * np.trace(C) / len(C) * np.eye(len(C), dtype=C.dtype)
-    W = np.linalg.solve(C, Xtr.T @ Ytr / len(Xtr))
-    res = Yte - Xte @ W
-    return float(np.mean(1 - (res ** 2).sum(0) / ((Yte ** 2).sum(0) + 1e-12)))
+    return np.linalg.solve(C, Xtr.T @ Ytr / len(Xtr))
 
 
-def closure(S0, M, frac=0.8):
+def _r2(Y, Yhat):
+    return float(np.mean(1 - ((Y - Yhat) ** 2).sum(0) / ((Y ** 2).sum(0) + 1e-12)))
+
+
+def ridge_r2(Xtr, Ytr, Xte, Yte, ridges=RIDGES):
+    """Held-out R^2; the ridge is chosen on the last quarter of the training set."""
+    v = int(0.75 * len(Xtr))
+    best = max(ridges, key=lambda r: _r2(Ytr[v:], Xtr[v:] @ _fit(Xtr[:v], Ytr[:v], r)))
+    return _r2(Yte, Xte @ _fit(Xtr, Ytr, best))
+
+
+def closure(S0, M, frac=FRAC):
     """S0: T x N micro (float32), M: N x Nk membership."""
     T = len(S0)
     Tt = int(frac * T)
@@ -80,8 +102,9 @@ def rg_closure(B, rule, n_levels, seed=0):
         out["closure"].append(r2c / r2m if r2m > 0 else np.nan)
         if k == n_levels - 1 or S.shape[1] < 4:
             break
-        J = infer_J(S, k)
-        p = pairs5(rule, S, J, rng)
+        Str = S[:int(FRAC * len(S))]                      # pairing from the training part only
+        J = infer_J(Str, k) if rule.startswith("inference") else None
+        p = pairs5(rule, Str, J, rng)
         S = 0.5 * (S[:, p[:, 0]] + S[:, p[:, 1]])
         M = M[:, p[:, 0]] + M[:, p[:, 1]]
     return {k: np.pad(np.array(v, float), (0, n_levels - len(v)), constant_values=np.nan) for k, v in out.items()}

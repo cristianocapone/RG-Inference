@@ -33,9 +33,10 @@ from closure_test import pairs5, closure, FRAC
 from directionality_sweep_hopfield import oneshot_membership, pca_closure, COL
 from rg_metrics import lagged_cov
 from spiking_ei_rg import symmetry
+from directedness import directedness
 
 CHAINS = [0.0, 0.05, 0.1, 0.2]
-RULES = ["inference", "inference_out", "oneshot", "correlation", "random"]
+RULES = ["inference", "inference_out", "oneshot", "correlation", "lagged_out", "random"]
 NET_KW = dict(Nref=3000, wclu=1.9)
 SIM = dict(delay_ms=5.0, delay_jitter=0.5, sigma=0.15)
 SEEDS = range(5)
@@ -74,6 +75,7 @@ def main():
         Wc0 = np.stack([(clu_sub == k).astype(np.float32) for k in range(spk.NCLU)], 1)
         _, D = lagged_cov(S0)
         store[f"{c}/symD"] = symmetry(D)
+        store[f"{c}/dir1"] = directedness(S0)[0]                 # noise-corrected, lag 1
         # full-network perturbation
         R1 = P.run_full(W, clu, np.random.default_rng(3))
         R2 = P.run_full(W, clu, np.random.default_rng(4))

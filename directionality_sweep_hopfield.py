@@ -39,7 +39,7 @@ T = 200_000
 GAMMAS = [0.0, 0.25, 0.5, 0.75, 1.0]
 RULES = ["inference", "inference_out", "oneshot", "correlation", "random"]
 COL = {"inference": "#d62728", "inference_out": "#8b0000", "oneshot": "#ff7f0e",
-       "correlation": "#8c8c00", "random": "#4a7fd6", "pca": "#7f7f7f"}
+       "correlation": "#8c8c00", "lagged_out": "#5e3c99", "random": "#4a7fd6", "pca": "#7f7f7f"}
 
 
 def seq_network(gamma):

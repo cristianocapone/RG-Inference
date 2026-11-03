@@ -11,6 +11,8 @@ sufficient part of the circuit that generates the directional dynamics.
  (c) Allen Brain Observatory Neuropixels, 32 mice, 256 units out of millions: every
      stimulus makes the activity more directional than spontaneous activity, but the
      advantage does not grow                     [results/allen/*.npz]
+ (d) Stringer mice: advantage vs number of observed units, 64 to 2048 random units
+                                                 [results/invivo_density.npz]
 Output: Figures/Fig_partial_observation.png / .pdf.  Run from the folder holding results/.
 """
 
@@ -90,11 +92,29 @@ def panel_allen(ax):
     ax.set_title(f"(c) mice in vivo, Neuropixels (n = {len(rows)})", loc="left", fontsize=10)
 
 
+def panel_density(ax):
+    d = np.load("results/invivo_density.npz")
+    mice = sorted({k.split("/")[0] for k in d.files})
+    cols = {"Krebs": "#1f77b4", "Waksman": "#6baed6", "Robbins": "#08306b"}
+    for m in mice:
+        ns = sorted(int(k.split("/")[1]) for k in d.files if k.startswith(m + "/"))
+        A = np.stack([d[f"{m}/{n}"] for n in ns])
+        ax.errorbar(ns, A[:, :, 2].mean(1), A[:, :, 2].std(1), fmt="o-", color=cols.get(m, "0.4"), ms=3,
+                    capsize=2, lw=1.4, label=m)
+    ax.set_xscale("log", base=2)
+    ax.axhline(0, color="0.7", ls=":")
+    ax.set_xlabel("observed units")
+    ax.set_ylabel("advantage of inference over correlation")
+    ax.legend(frameon=False, fontsize=8, loc="lower right")
+    ax.set_title("(d) mice, spontaneous: more units", loc="left", fontsize=10)
+
+
 def main():
-    fig, axs = plt.subplots(1, 3, figsize=(15.5, 4.2), gridspec_kw=dict(width_ratios=[1, 1.05, 1]))
+    fig, axs = plt.subplots(1, 4, figsize=(19.5, 4.2), gridspec_kw=dict(width_ratios=[1, 1.05, 1, 0.85]))
     panel_sim(axs[0])
     panel_cultures(axs[1])
     panel_allen(axs[2])
+    panel_density(axs[3])
     fig.tight_layout()
     os.makedirs("Figures", exist_ok=True)
     fig.savefig("Figures/Fig_partial_observation.png", dpi=200)

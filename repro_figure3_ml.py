@@ -5,8 +5,10 @@ inference (ml_kinetic_ising.py) at every RG level.
 Same network and protocol as repro_figure3.py (5 patterns of 128 units, 2a -> 3,
 2b -> 4, alpha = 0.2, beta = 55, h = -2), but:
   * inference rule: couplings re-inferred by exact ML (L2 = 1e-3) at every level and
-    pairing on the rank-8 denoised synaptic similarity (fig3_ml_rg.py shows that this
+    pairing on the low-rank denoised synaptic similarity (fig3_ml_rg.py shows that this
     keeps 2a and 2b perfectly separated down to 64 blocks, whereas mean-field mixes them);
+    the rank of the denoised similarity is chosen from the data, at the largest relative gap
+    of the singular-value spectrum of the inferred couplings (pairing_tests.gap_rank);
   * correlation rule: greedy pairing on the Pearson correlation, as before;
   * the coarse-grained model at RG step 5 (64 blocks) is fitted by exact ML for both
     rules, so that the comparison isolates the effect of the grouping.
@@ -22,7 +24,7 @@ import numpy as np
 import repro_figure3 as F
 from repro_figures_v2 import greedy_pairs, synaptic_similarity
 from ml_kinetic_ising import fit_kinetic_ising
-from pairing_tests import lowrank
+from pairing_tests import lowrank_gap
 
 F.N = 1024
 T = 100_000
@@ -38,14 +40,16 @@ def rg_ml(S0, lab, rule, rng):
     for k in range(F.LEVEL):
         if rule == "inference":
             J = fit_kinetic_ising(S, nlev=2 ** k, l2=L2, maxiter=300)[0]
-            G = synaptic_similarity(lowrank(J, RANK))
+            Jl, r = lowrank_gap(J)
+            G = synaptic_similarity(Jl)
         else:
             G = np.nan_to_num(np.corrcoef(S.T))
         np.fill_diagonal(G, -np.inf)
         p = greedy_pairs(G)
         S = 0.5 * (S[:, p[:, 0]] + S[:, p[:, 1]])
         comp = 0.5 * (comp[p[:, 0]] + comp[p[:, 1]])
-        print(f"  {rule} level {k + 1}: {S.shape[1]} blocks, purity {comp.max(1).mean():.3f}", flush=True)
+        print(f"  {rule} level {k + 1}: {S.shape[1]} blocks, purity {comp.max(1).mean():.3f}"
+              + (f", rank {r}" if rule == "inference" else ""), flush=True)
     J, h, _ = fit_kinetic_ising(S, nlev=2 ** F.LEVEL, l2=L2, maxiter=300)
     return S, J, h, comp
 

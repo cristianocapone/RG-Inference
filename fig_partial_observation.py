@@ -11,8 +11,11 @@ sufficient part of the circuit that generates the directional dynamics.
  (c) Allen Brain Observatory Neuropixels, 32 mice, 256 units out of millions: every
      stimulus makes the activity more directional than spontaneous activity, but the
      advantage does not grow                     [results/allen/*.npz]
- (d) Stringer mice: advantage vs number of observed units, 64 to 2048 random units
-                                                 [results/invivo_density.npz]
+ (d) Allen sessions (first 10 of the data set): advantage vs number of observed units,
+     64 to 512 random units, spontaneous activity vs drifting gratings vs natural movie
+                                                 [results/allen_density/*.npz]
+ (e) Stringer mice, spontaneous: advantage vs number of observed units, 64 to 2048
+     random units                                [results/invivo_density.npz]
 Output: Figures/Fig_partial_observation.png / .pdf.  Run from the folder holding results/.
 """
 
@@ -106,15 +109,33 @@ def panel_density(ax):
     ax.set_xlabel("observed units")
     ax.set_ylabel("advantage of inference over correlation")
     ax.legend(frameon=False, fontsize=8, loc="lower right")
-    ax.set_title("(d) mice, spontaneous: more units", loc="left", fontsize=10)
+    ax.set_title("(e) Stringer mice, spontaneous: more units", loc="left", fontsize=10)
+
+
+def panel_allen_density(ax):
+    rows = [r for r in (dict(np.load(f)) for f in sorted(glob.glob("results/allen_density/*.npz"))) if "skipped" not in r]
+    sizes = [64, 128, 256, 512]
+    for c, col, lab in [("spontaneous", "0.5", "spontaneous"), ("natural_movie_three", "#f4a261", "natural movie"),
+                        ("drifting_gratings", "#d62728", "drifting gratings")]:
+        A = np.array([[r[f"{c}/{n}"][2] for n in sizes] for r in rows])
+        ax.errorbar(sizes, A.mean(0), A.std(0) / np.sqrt(len(A)), fmt="o-", color=col, ms=4, capsize=2, lw=1.6,
+                    label=f"{lab} (dir. {np.mean([r[f'{c}/{n}'][0] for r in rows for n in sizes]):.2f})")
+    ax.set_xscale("log", base=2)
+    ax.axhline(0, color="0.7", ls=":")
+    ax.set_xlabel("observed units")
+    ax.set_ylabel("advantage of inference over correlation")
+    ax.legend(frameon=False, fontsize=8, loc="lower right")
+    ax.set_title(f"(d) mice, Allen: more units (n = {len(rows)})", loc="left", fontsize=10)
 
 
 def main():
-    fig, axs = plt.subplots(1, 4, figsize=(19.5, 4.2), gridspec_kw=dict(width_ratios=[1, 1.05, 1, 0.85]))
-    panel_sim(axs[0])
-    panel_cultures(axs[1])
-    panel_allen(axs[2])
-    panel_density(axs[3])
+    fig, axs = plt.subplot_mosaic([["a", "a", "a", "b", "b", "b"], ["c", "c", "d", "d", "e", "e"]], figsize=(14, 8.4))
+    panel_sim(axs["a"])
+    panel_cultures(axs["b"])
+    panel_allen(axs["c"])
+    panel_allen_density(axs["d"])
+    panel_density(axs["e"])
+    axs["e"].sharey(axs["d"])
     fig.tight_layout()
     os.makedirs("Figures", exist_ok=True)
     fig.savefig("Figures/Fig_partial_observation.png", dpi=200)

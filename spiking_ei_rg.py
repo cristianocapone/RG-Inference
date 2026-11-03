@@ -3,8 +3,11 @@ Inference-based RG on a simulated spiking E/I network (new test, not in the draf
 
 Network: LIF neurons with exponential synapses and clustered excitation, as in
 Litwin-Kumar & Doiron, Nat. Neurosci. 2012 (p_EE = 0.2, p_EI = p_IE = p_II = 0.5,
-J_EE = 0.024, J_EI = -0.045, J_IE = 0.014, J_II = -0.057, rescaled by sqrt(5000/N);
-16 E clusters with R_EE = 2.5 and in-cluster weights x1.7), N = 1600 E + 448 I = 2048.
+J_EE = 0.024, J_EI = -0.045, J_IE = 0.014, J_II = -0.057, rescaled by sqrt(Nref/N);
+16 E clusters with R_EE = 2.5 and in-cluster weights x wclu), N = 1600 E + 448 I = 2048.
+The function defaults (Nref = 5000, wclu = 1.7, no delays) are the no-delay runs; the
+networks used in the paper (axonal delays) use Nref = 3000, wclu = 1.9, delay 5 +/- 2.5 ms,
+noise 0.15: `python spiking_ei_rg.py 5 0.5 0.15 3000 1.9`.
 Two structures:
   * "clustered": symmetric cluster structure -> metastable switching between clusters;
   * "chain":     same + extra E->E connections from cluster c to cluster c+1

@@ -61,7 +61,7 @@ def iter_deep(path="results/iter_deep.npz"):
         r = np.random.default_rng(0)
         sub = np.sort(np.r_[r.choice(spk.NE, 400, replace=False), spk.NE + r.choice(spk.NI, 112, replace=False)])
         sets.append((f"spiking/chain{c:g}", B[:, sub].astype(np.float32)))
-    for cu in ("d1", "d3", "d4"):
+    for cu in CULT:
         B_all, _, _ = load_culture(cu, 10000)
         N = min(512, B_all.shape[0] // 100, B_all.shape[1]) // 2 * 2
         sets.append((f"cultures/{cu}", B_all[:, :N].astype(np.float32)))
@@ -152,14 +152,14 @@ def main():
     ax = axs[1, 1]
     lv = np.arange(1, 8)
     for rule in ["inference", "inference_out", "oneshot", "correlation", "random"]:
-        y, e = msem([deep[f"cultures/{n}/{rule}"] for n in ("d1", "d3", "d4")])
+        y, e = msem([deep[f"cultures/{n}/{rule}"] for n in CULT])
         ax.errorbar(lv, y, e, fmt="o-", color=COL[rule], ms=3, capsize=2, label=LAB[rule])
         ys = np.nanmean([deep[f"spiking/{n}/{rule}"] for n in ("chain0.2", "chain0")], 0)
         ax.plot(lv, ys, "--", color=COL[rule], lw=1)
     ax.axhline(1, color="0.6", ls=":")
     ax.set_xlabel("RG step (256 -> 4 blocks)")
     ax.set_ylabel("closure")
-    ax.set_title("(e) iterative vs one-shot: cultures (solid), spiking (dashed)", fontsize=10, loc="left")
+    ax.set_title("(e) iterative vs one-shot: 9 cultures (solid), spiking (dashed)", fontsize=10, loc="left")
     ax.legend(frameon=False, fontsize=7)
 
     # ---------------- (f) specific predictability ----------------

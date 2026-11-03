@@ -1,4 +1,4 @@
-# Inference-based renormalization group for neural networks with temporal dynamics
+# Inferred couplings, not correlations, preserve directional neural dynamics under coarse-graining
 
 Code for the paper *Inference drives Renormalization Group in Neural Networks with temporal dynamics* (Capone, Mancini, Gigante, Del Giudice).
 
@@ -47,6 +47,7 @@ Tested with Python 3.12, numpy 2.4, scipy 1.17, matplotlib, scikit-learn 1.9.
   - Figs. 1–2
 - `ml_kinetic_ising.py`: exact maximum-likelihood inference of the kinetic Ising model at any RG level (L-BFGS, analytic gradient, exact partition function of the 2^k+1-valued block variables).
 - `rg_metrics.py`: symmetry index, lagged covariance, held-out predictability (full, autoregressive, autoregressive + global mode), shifted surrogates.
+- `directedness.py`: noise-corrected directedness of a recording (antisymmetric fraction of the lag-1 cross-correlation power, surrogate-subtracted); `directedness_all.py` computes it for every recording and simulated network (`results/directedness.npz`).
 - `closure_test.py`:
   - pairing rules (inference in+out / output / input, correlation, random)
   - closure R²(y|y)/R²(y|x) of the coarse-grained dynamics
@@ -65,11 +66,13 @@ Tested with Python 3.12, numpy 2.4, scipy 1.17, matplotlib, scikit-learn 1.9.
 | Fig. 2 and Suppl. Fig. 1 (Hopfield variance scaling) | `repro_figures_v2.py` |
 | Fig. 3 (N = 512, mean field) | `repro_figure3.py` |
 | Fig. 3 (N = 1024, exact ML) | `repro_figure3_ml.py` (simulation, inference, stimulation; ~45 min), then `fig3_publication.py` (figure); `fig3_ml_rg.py` (grouping only) |
+| Fig. 3 controls (model-free lagged grouping; one-shot pairing on level-0 ML couplings) | `fig3_lagged_test.py`, `fig3_oneshot_test.py` |
 | Fig. 4 | `fig4_new.py`, using the results of `directionality_data.py`, `closure_test.py`, `directionality_sweep_spiking.py`, `excess_symmetry_cultures.py`, `invivo_stringer.py`; computes `results/iter_deep.npz` itself |
 | Suppl.: symmetry vs surrogate | `supp_symmetry.py` (figure); `real_data_rg.py`, `real_data_surrogate.py`, `null_autocorr_symmetry.py`, `excess_symmetry_sim.py` |
 | Suppl.: robustness (bin size, unit selection) | `robustness.py` |
-| Partial observation (simulation, cultures, Allen in vivo) | `fig_partial_observation.py`, using `partial_observation.py`, `partial_observation_cultures.py`, `allen_rest_vs_task.py` |
+| Fig. 5, partial observation (simulation, cultures, mice) | `fig_partial_observation.py`, using `partial_observation.py`, `partial_observation_cultures.py`, `allen_rest_vs_task.py` |
 | Cover-letter figure | `cover_figure.py` |
+| Suppl.: Allen Brain Observatory, preliminary (earlier pipeline; streamed, ~1 GB per session) | `supp_allen.py`, using `allen_rest_vs_task.py` and `allen_density.py` |
 | Suppl.: in vivo single probes | `invivo_local.py` |
 | Suppl.: perturbation transfer | `perturbation_transfer.py` (args: trials, amplitude, network) |
 | Suppl.: pairing variants, nMF vs ML | `pairing_tests.py` |

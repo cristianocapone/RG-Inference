@@ -8,14 +8,11 @@ sufficient part of the circuit that generates the directional dynamics.
      below a few percent                         [results/partial_observation.npz]
  (b) cultures: same analysis on random subsets of electrodes, one line per culture
      (colour = directedness of the culture)      [results/partial_observation_cultures.npz]
- (c) Allen Brain Observatory Neuropixels, 32 mice, 256 units out of millions: every
-     stimulus makes the activity more directional than spontaneous activity, but the
-     advantage does not grow                     [results/allen/*.npz]
- (d) Allen sessions (first 10 of the data set): advantage vs number of observed units,
-     64 to 512 random units, spontaneous activity vs drifting gratings vs natural movie
-                                                 [results/allen_density/*.npz]
- (e) Stringer mice, spontaneous: advantage vs number of observed units, 64 to 2048
+ (c) Stringer mice, spontaneous: advantage vs number of observed units, 64 to 2048
      random units                                [results/invivo_density.npz]
+Directedness: noise-corrected lag-1 index (directedness.py).  The model-free rule
+(columns of the lag-1 cross-correlation, "lagged_out") is shown dashed in (a) and (c).
+The Allen Brain Observatory panels (old pipeline) are in supp_allen.py.
 Output: Figures/Fig_partial_observation.png / .pdf.  Run from the folder holding results/.
 """
 
@@ -41,16 +38,17 @@ def panel_sim(ax):
     for name, (col, lab) in NETS.items():
         A = np.stack([d[f"{name}/{n}"] for n in sizes])
         ax.errorbar(frac, A[:, :, 2].mean(1), A[:, :, 2].std(1), fmt="o-", color=col, ms=4, capsize=2, lw=1.8, label=lab)
-        ax2.plot(frac, A[:, :, 0].mean(1), "--", color=col, lw=1)
+        ax.plot(frac, A[:, :, 6].mean(1), "s--", color=col, ms=3, lw=1, alpha=0.7)
+        ax2.plot(frac, A[:, :, 8].mean(1), ":", color=col, lw=1)
     ax.set_xscale("log")
     ax.set_xticks(frac)
     ax.set_xticklabels([f"{f:g}" for f in np.round(frac, 1)])
     ax.minorticks_off()
     ax.axhline(0, color="0.7", ls=":")
     ax.set_xlabel("observed fraction of neurons (%)")
-    ax.set_ylabel("advantage of inference over correlation\n(closure, solid)")
-    ax2.set_ylabel("directedness (dashed)", color="0.4")
-    ax2.set_ylim(0, 0.6)
+    ax.set_ylabel("advantage over correlation\n(inference solid, lagged dashed)")
+    ax2.set_ylabel("directedness, lag 1 (dotted)", color="0.4")
+    ax2.set_ylim(0, 0.06)
     ax.legend(frameon=False, fontsize=8, loc="upper left")
     ax.set_title("(a) spiking networks, ground truth", loc="left", fontsize=10)
 
@@ -58,8 +56,8 @@ def panel_sim(ax):
 def panel_cultures(ax):
     d = np.load("results/partial_observation_cultures.npz")
     cults = sorted({k.split("/")[0] for k in d.files}, key=lambda c: int(c[1:]))
-    dirs = {c: np.mean([d[k][:, 0].mean() for k in d.files if k.startswith(c + "/")]) for c in cults}
-    norm = colors.Normalize(0.2, 0.75)
+    dirs = {c: np.mean([d[k][:, 7].mean() for k in d.files if k.startswith(c + "/")]) for c in cults}
+    norm = colors.Normalize(0.0, 0.3)
     cmap = matplotlib.colormaps["viridis"]
     for c in cults:
         ns = sorted(int(k.split("/")[1]) for k in d.files if k.startswith(c + "/"))
@@ -70,7 +68,7 @@ def panel_cultures(ax):
     ax.set_xlabel("observed electrodes")
     ax.set_ylabel("advantage of inference over correlation")
     sm = cm.ScalarMappable(norm=norm, cmap=cmap)
-    plt.colorbar(sm, ax=ax, fraction=0.05, pad=0.02, label="directedness of the culture")
+    plt.colorbar(sm, ax=ax, fraction=0.05, pad=0.02, label="directedness of the culture (lag 1)")
     ax.set_title("(b) cultures, random subsets of electrodes", loc="left", fontsize=10)
 
 
@@ -104,12 +102,13 @@ def panel_density(ax):
         A = np.stack([d[f"{m}/{n}"] for n in ns])
         ax.errorbar(ns, A[:, :, 2].mean(1), A[:, :, 2].std(1), fmt="o-", color=cols.get(m, "0.4"), ms=3,
                     capsize=2, lw=1.4, label=m)
+        ax.plot(ns, A[:, :, 5].mean(1), "s--", color=cols.get(m, "0.4"), ms=2.5, lw=1, alpha=0.7)
     ax.set_xscale("log", base=2)
     ax.axhline(0, color="0.7", ls=":")
     ax.set_xlabel("observed units")
     ax.set_ylabel("advantage of inference over correlation")
     ax.legend(frameon=False, fontsize=8, loc="lower right")
-    ax.set_title("(e) Stringer mice, spontaneous: more units", loc="left", fontsize=10)
+    ax.set_title("(c) mice in vivo, spontaneous: more units", loc="left", fontsize=10)
 
 
 def panel_allen_density(ax):
@@ -129,13 +128,10 @@ def panel_allen_density(ax):
 
 
 def main():
-    fig, axs = plt.subplot_mosaic([["a", "a", "a", "b", "b", "b"], ["c", "c", "d", "d", "e", "e"]], figsize=(14, 8.4))
-    panel_sim(axs["a"])
-    panel_cultures(axs["b"])
-    panel_allen(axs["c"])
-    panel_allen_density(axs["d"])
-    panel_density(axs["e"])
-    axs["e"].sharey(axs["d"])
+    fig, axs = plt.subplots(1, 3, figsize=(15, 4.3), gridspec_kw=dict(width_ratios=[1, 1.1, 0.9]))
+    panel_sim(axs[0])
+    panel_cultures(axs[1])
+    panel_density(axs[2])
     fig.tight_layout()
     os.makedirs("Figures", exist_ok=True)
     fig.savefig("Figures/Fig_partial_observation.png", dpi=200)

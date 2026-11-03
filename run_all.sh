@@ -19,6 +19,8 @@ $PY repro_figures_v2.py                                     # ~10 min
 $PY repro_figure3.py                                        # N=512, mean-field inference
 $PY fig3_ml_rg.py sim_cache/seq1024_T100000.npy             # N=1024: grouping with exact ML (~15 min)
 $PY repro_figure3_ml.py                                     # N=1024: full figure with exact ML (~45 min)
+$PY fig3_lagged_test.py                                     # control: model-free lagged grouping on the Fig. 3 network
+$PY fig3_oneshot_test.py                                    # control: one-shot pairing on level-0 ML couplings (~12 min)
 $PY fig3_publication.py                                     # Fig. 3 of the Nat Comm version
 $PY fig1_concept.py                                         # Fig. 1 of the Nat Comm version
 
@@ -35,6 +37,7 @@ $PY invivo_stringer.py data/stringer2019_neuropixels        # 3 mice
 $PY closure_test.py sim_cache/seq512_T300000.npy            # closure on cultures, mice, spiking, Hopfield
 $PY robustness.py data/stringer2019_neuropixels             # bin size x unit selection
 $PY directionality_data.py                                  # closure advantage vs directedness
+$PY directedness_all.py                                     # noise-corrected directedness of every recording
 
 # --- Figure 4 (uses the results above) ---
 $PY fig4_new.py
@@ -44,6 +47,7 @@ $PY partial_observation.py                                  # ~5 min
 $PY partial_observation_cultures.py                         # ~10 min
 $PY allen_rest_vs_task.py                                   # 32 sessions streamed from DANDI, ~1 h
 $PY fig_partial_observation.py
+$PY supp_allen.py                                           # supplementary: Allen (preliminary, earlier pipeline)
 $PY invivo_local.py
 $PY cover_figure.py
 

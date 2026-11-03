@@ -103,7 +103,8 @@ def rg_metrics(B, rule, n_levels, seed=0):
         out["N"].append(S.shape[1])
         if k == n_levels - 1 or S.shape[1] < 4:
             break
-        p = pairs_for(rule, S, J, rng)
+        Str = S[:int(0.8 * len(S))]                       # pairing from the training part only
+        p = pairs_for(rule, Str, infer_J(Str, k) if rule == "inference" else None, rng)
         S = 0.5 * (S[:, p[:, 0]] + S[:, p[:, 1]])
         levels.append(S)
     K, M2 = variance_scaling(levels)

@@ -33,9 +33,10 @@ from real_data_rg import load_culture
 import spiking_ei_rg as spk
 
 COL = {"inference": "#d62728", "inference_out": "#8b0000", "inference_in": "#f4a3a3", "oneshot": "#ff7f0e",
-       "correlation": "#8c8c00", "random": "#4a7fd6", "pca": "#7f7f7f"}
+       "oneshot_out": "#b35900", "lagged_out": "#5e3c99", "correlation": "#8c8c00", "random": "#4a7fd6", "pca": "#7f7f7f"}
 LAB = {"inference": "inference (in+out)", "inference_out": "inference (output)", "inference_in": "inference (input)",
-       "oneshot": "one-shot (no re-inference)", "correlation": "correlation", "random": "random", "pca": "PCA"}
+       "oneshot": "one-shot (in+out)", "oneshot_out": "one-shot (output)", "lagged_out": "lagged correlation (output)",
+       "correlation": "correlation", "random": "random", "pca": "PCA"}
 CULT = ["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d15"]
 MICE = ["Krebs", "Waksman", "Robbins"]
 
@@ -86,36 +87,40 @@ def iter_deep(path="results/iter_deep.npz"):
 def main():
     cl = np.load("results/closure.npz")
     cm = {"cultures": np.load("results/cultures_metrics.npz"), "mice": np.load("results/stringer_metrics.npz")}
+    dr = np.load("results/directedness.npz")
     sw = np.load("results/dir_sweep_spiking.npz")
     deep = iter_deep()
 
     fig, axs = plt.subplots(2, 3, figsize=(15, 8.6))
     # ---------------- (a) data: advantage vs directedness ----------------
     ax = axs[0, 0]
-    xs, ys, gs, names = [], [], [], []
+    xs, ys, y2, gs, names = [], [], [], [], []
     for grp, lst in [("cultures", CULT), ("mice", MICE)]:
         for n in lst:
-            xs.append(1 - cm[grp][f"{n}/inference/real/sym_D"][0])
-            ys.append(np.nanmean((cl[f"{grp}/{n}/inference/closure"] - cl[f"{grp}/{n}/correlation/closure"])[1:7]))
+            xs.append(float(dr[f"{grp}/{n}/lag1"]))
+            ys.append(np.nanmean((cl[f"{grp}/{n}/inference_out/closure"] - cl[f"{grp}/{n}/correlation/closure"])[1:7]))
+            y2.append(np.nanmean((cl[f"{grp}/{n}/inference/closure"] - cl[f"{grp}/{n}/correlation/closure"])[1:7]))
             gs.append(grp)
             names.append(n)
-    xs, ys = np.array(xs), np.array(ys)
-    for grp, mk, c in [("cultures", "o", "#d62728"), ("mice", "s", "#1f77b4")]:
+    xs, ys, y2 = np.array(xs), np.array(ys), np.array(y2)
+    for grp, mk, c in [("cultures", "o", "#8b0000"), ("mice", "s", "#1f77b4")]:
         m = np.array([g == grp for g in gs])
-        ax.scatter(xs[m], ys[m], marker=mk, s=55, color=c, label=grp, zorder=3)
+        ax.scatter(xs[m], ys[m], marker=mk, s=55, color=c, label=f"{grp}, output rule", zorder=3)
+        ax.scatter(xs[m], y2[m], marker=mk, s=30, facecolors="none", edgecolors=c, label=f"{grp}, in+out rule", zorder=3)
     for x, y, n in zip(xs, ys, names):
         ax.annotate(n, (x, y), fontsize=7, xytext=(3, 3), textcoords="offset points")
     rho, p = spearmanr(xs, ys)
+    rho2, p2 = spearmanr(xs, y2)
     ax.axhline(0, color="0.6", ls=":")
-    ax.set_xlabel("directedness of the recording, 1 - symmetry of D(1)")
+    ax.set_xlabel("directedness of the recording at lag 1 (noise-corrected)")
     ax.set_ylabel("closure advantage\ninference-RG - correlation-RG")
-    ax.set_title(f"(a) data: Spearman rho = {rho:.2f}, p = {p:.4f}", fontsize=10, loc="left")
-    ax.legend(frameon=False, fontsize=8, loc="upper left")
+    ax.set_title(f"(a) data: rho = {rho:.2f} (p = {p:.3f}), in+out rho = {rho2:.2f} (p = {p2:.3f})", fontsize=10, loc="left")
+    ax.legend(frameon=False, fontsize=7, loc="upper left")
 
     # ---------------- (b) cultures: closure along RG ----------------
     ax = axs[0, 1]
     steps = np.arange(1, 9)
-    for rule in ["inference", "inference_out", "inference_in", "correlation", "random"]:
+    for rule in ["inference", "inference_out", "lagged_out", "correlation", "random"]:
         y, e = msem([pad(cl[f"cultures/{n}/{rule}/closure"]) for n in CULT])
         ax.errorbar(steps, y, e, fmt="o-", color=COL[rule], ms=3, capsize=2, label=LAB[rule])
     ax.axhline(1, color="0.6", ls=":")
@@ -127,19 +132,21 @@ def main():
     # ---------------- (c) spiking: closure vs directedness ----------------
     ax = axs[0, 2]
     dirx = np.array([sw[f"{c}/R_asym"] for c in CHAINS])
-    for rule in ["inference", "inference_out", "oneshot", "correlation", "random"]:
+    for rule in ["inference", "inference_out", "oneshot", "lagged_out", "correlation", "random"]:
         A = np.stack([sw[f"{c}/{rule}/closure4"] for c in CHAINS])
         ax.errorbar(dirx, A.mean(1), A.std(1), fmt="o-", color=COL[rule], ms=3, capsize=2, label=LAB[rule])
     ax.plot(dirx, [sw[f"{c}/pca/closure4"] for c in CHAINS], "o-", color=COL["pca"], ms=3, label=LAB["pca"])
+    for c, x in zip(CHAINS, dirx):
+        ax.annotate(f"lag-1 dir. {float(sw[f'{c}/dir1']):.3f}", (x, 0.885), fontsize=6.5, ha="center", color="0.3")
     ax.axhline(1, color="0.6", ls=":")
-    ax.set_xlabel("directedness of the network\n(asymmetry of the response to stimulation)")
+    ax.set_xlabel("directedness of the propagation\n(asymmetry of the response to stimulation; chain 0 to 0.2)")
     ax.set_ylabel("closure at 32 blocks")
     ax.set_title("(c) spiking E/I networks, ground truth", fontsize=10, loc="left")
     ax.legend(frameon=False, fontsize=7)
 
     # ---------------- (d) spiking: perturbation transfer ----------------
     ax = axs[1, 0]
-    for rule in ["inference", "inference_out", "oneshot", "correlation", "random"]:
+    for rule in ["inference", "inference_out", "oneshot", "lagged_out", "correlation", "random"]:
         A = np.stack([sw[f"{c}/{rule}/pert"] for c in CHAINS])
         ax.errorbar(dirx, A.mean(1), A.std(1), fmt="o-", color=COL[rule], ms=3, capsize=2, label=LAB[rule])
     A = np.stack([sw[f"{c}/micro/pert"] for c in CHAINS])
@@ -154,7 +161,7 @@ def main():
     # ---------------- (e) iterative vs one-shot at strong reductions ----------------
     ax = axs[1, 1]
     lv = np.arange(1, 8)
-    for rule in ["inference", "inference_out", "oneshot", "correlation", "random"]:
+    for rule in ["inference", "inference_out", "oneshot", "oneshot_out", "correlation"]:
         y, e = msem([deep[f"cultures/{n}/{rule}"] for n in CULT])
         ax.errorbar(lv, y, e, fmt="o-", color=COL[rule], ms=3, capsize=2, label=LAB[rule])
         ys = np.nanmean([deep[f"spiking/{n}/{rule}"] for n in ("chain0.2", "chain0")], 0)

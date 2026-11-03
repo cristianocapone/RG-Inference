@@ -118,8 +118,8 @@ def panel_data(ax):
     subsets), one line per culture coloured by its directedness."""
     d = np.load("results/partial_observation_cultures.npz")
     cults = sorted({k.split("/")[0] for k in d.files}, key=lambda c: int(c[1:]))
-    dirs = {c: np.mean([d[k][:, 0].mean() for k in d.files if k.startswith(c + "/")]) for c in cults}
-    norm = matplotlib.colors.Normalize(0.2, 0.75)
+    dirs = {c: np.mean([d[k][:, 7].mean() for k in d.files if k.startswith(c + "/")]) for c in cults}
+    norm = matplotlib.colors.Normalize(0.0, 0.3)
     cmap = matplotlib.colormaps["viridis"]
     for c in cults:
         ns = sorted(int(k.split("/")[1]) for k in d.files if k.startswith(c + "/"))
@@ -129,7 +129,7 @@ def panel_data(ax):
     ax.set_xlabel("observed electrodes")
     ax.set_ylabel("advantage of inference\nover correlation (closure)")
     sm = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
-    plt.colorbar(sm, ax=ax, fraction=0.05, pad=0.02, label="directedness of the activity")
+    plt.colorbar(sm, ax=ax, fraction=0.05, pad=0.02, label="directedness of the activity (lag 1)")
     ax.set_title("3  Data: needs directedness and enough circuit", loc="left", fontsize=11, weight="bold")
 
 

@@ -38,6 +38,18 @@ def lowrank(J, r):
     return (U[:, :r] * s[:r]) @ Vt[:r]
 
 
+def gap_rank(J, r_max=64):
+    """Rank at the largest relative gap of the singular-value spectrum of J
+    (data-driven: no knowledge of the number of stored patterns)."""
+    sv = np.linalg.svd(J, compute_uv=False)[:r_max + 1]
+    return int(np.argmax(sv[:-1] / sv[1:])) + 1
+
+
+def lowrank_gap(J, r_max=64):
+    r = gap_rank(J, r_max)
+    return lowrank(J, r), r
+
+
 def lowrank_mp(J, margin=1.1):
     """Keep only the singular values above the Marchenko-Pastur (quarter-circle) noise
     edge: for an N x N iid-noise matrix the median singular value is ~0.81 sigma sqrt(N)

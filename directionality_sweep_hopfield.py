@@ -74,10 +74,15 @@ def pattern_transitions(act, thr=0.6, smooth=5):
     return C / max(C.sum(), 1), len(seq)
 
 
-def oneshot_membership(J0, level):
+def oneshot_membership(J0, level, out=False):
     """Hierarchical pairing from the level-0 similarity only (no re-inference):
-    at each step pair blocks by the mean level-0 similarity between their members."""
-    G0 = synaptic_similarity(J0)
+    at each step pair blocks by the mean level-0 similarity between their members
+    (rows+columns of J0, or columns only with out=True)."""
+    if out:
+        V = J0.T / (np.linalg.norm(J0.T, axis=1, keepdims=True) + 1e-12)
+        G0 = V @ V.T
+    else:
+        G0 = synaptic_similarity(J0)
     n = len(J0)
     M = np.eye(n, dtype=np.float32)
     for k in range(level):

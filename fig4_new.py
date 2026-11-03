@@ -51,9 +51,10 @@ def pad(a, L=8):
 
 
 def iter_deep(path="results/iter_deep.npz"):
-    if os.path.exists(path):
-        return dict(np.load(path))
-    out = {}
+    out = dict(np.load(path)) if os.path.exists(path) else {}
+    rules = ["inference", "inference_out", "oneshot", "oneshot_out", "correlation", "random"]
+    if all(f"cultures/{cu}/{r}" in out for cu in CULT for r in rules):
+        return out
     sets = []
     for c in (0.2, 0.0):
         ts, ids, W, clu = spk.get_spikes(cache_name(c), c, 600, SIM["delay_ms"], SIM["delay_jitter"], SIM["sigma"], NET_KW)
@@ -66,7 +67,9 @@ def iter_deep(path="results/iter_deep.npz"):
         N = min(512, B_all.shape[0] // 100, B_all.shape[1]) // 2 * 2
         sets.append((f"cultures/{cu}", B_all[:, :N].astype(np.float32)))
     for name, S0 in sets:
-        for rule in ["inference", "inference_out", "oneshot", "correlation", "random"]:
+        for rule in rules:
+            if f"{name}/{rule}" in out:
+                continue
             v = []
             for level in range(1, 8):
                 if S0.shape[1] // 2 ** level < 2:

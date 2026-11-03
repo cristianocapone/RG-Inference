@@ -49,8 +49,8 @@ def cache_name(c):
 def membership(S0, rule, level, seed=0):
     rng = np.random.default_rng(seed)
     S0 = S0[:int(FRAC * len(S0))]                         # pairing from the training part only
-    if rule == "oneshot":
-        return oneshot_membership(infer_J(S0, 0), level)
+    if rule in ("oneshot", "oneshot_out"):
+        return oneshot_membership(infer_J(S0, 0), level, out=rule == "oneshot_out")
     S, M = S0, np.eye(S0.shape[1], dtype=np.float32)
     for k in range(level):
         J = infer_J(S, k) if rule.startswith("inference") else None

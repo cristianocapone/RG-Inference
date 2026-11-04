@@ -154,14 +154,22 @@ def panel_result(ax):
         ax.spines[sp].set_color("0.6")
     ax.tick_params(colors="0.4", labelsize=7)
     ax.axhline(0, color="0.75", ls=":", lw=1)
-    ax.scatter(xv, yv, s=26, color="#9fb6c9", ec="white", lw=0.6, zorder=2)
-    ax.scatter(xc, yc, s=46, color=RED, ec="white", lw=0.8, zorder=3)
+    def binned(x, y, nb):  # mean +/- s.e.m. over equal-count bins of directedness
+        o = np.argsort(x)
+        out = []
+        for ix in np.array_split(o, nb):
+            bx, by = np.asarray(x)[ix], np.asarray(y)[ix]
+            out.append((bx.mean(), bx.std(ddof=1) / np.sqrt(len(ix)), by.mean(), by.std(ddof=1) / np.sqrt(len(ix))))
+        return np.array(out).T
+    for x, y, nb, c, z in [(xv, yv, 4, "#7a9ab8", 2), (xc, yc, 3, RED, 3)]:
+        mx, ex, my, ey = binned(x, y, nb)
+        ax.errorbar(mx, my, xerr=ex, yerr=ey, fmt="o-", color=c, ms=7, mec="white", mew=0.8, lw=1.2, capsize=2.5, zorder=z)
     ax.set_xlabel("directedness of the dynamics", fontsize=8, color="0.35")
     ax.set_ylabel("advantage of inference\nover correlation", fontsize=8, color="0.35")
-    ax.set_xlim(-0.005, 0.26); ax.set_ylim(-0.095, 0.115)
-    ax.set_yticks([-0.1, 0, 0.1]); ax.set_xticks([0, 0.1, 0.2])
-    ax.text(0.03, 0.095, "in vitro (9 cultures)", fontsize=8, color=RED, weight="bold")
-    ax.text(0.03, -0.085, f"in vivo ({len(xv)} sessions)", fontsize=8, color="#4a6f8f", weight="bold")
+    ax.set_xlim(-0.005, 0.26); ax.set_ylim(-0.075, 0.115)
+    ax.set_yticks([-0.05, 0, 0.05, 0.1]); ax.set_xticks([0, 0.1, 0.2])
+    ax.text(0.03, 0.095, "in vitro (9 cultures, tertiles)", fontsize=8, color=RED, weight="bold")
+    ax.text(0.03, -0.062, f"in vivo ({len(xv)} sessions, quartiles)", fontsize=8, color="#4a6f8f", weight="bold")
 
 
 def main():

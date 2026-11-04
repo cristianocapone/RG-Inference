@@ -68,19 +68,20 @@ def panel_scheme(ax):
     B = [(2.2, 3.2), (3.2, 2.4), (3.8, 3.6), (2.6, 4.3), (1.6, 2.5)]
     G = [(5.6, 8.7), (6.7, 7.0), (5.3, 5.3), (7.5, 5.5), (6.3, 3.0), (7.7, 2.2), (8.3, 7.9), (8.5, 3.9)]
     for grp, col in [(A, CORAL), (B, TEAL)]:
-        for i in range(len(grp)):
-            for j in range(i + 1, len(grp)):
-                sedge(ax, grp[i], grp[j], col, lw=0.9, rad=0.2, alpha=0.45)
+        for i, j in [(0, 1), (1, 4), (2, 3), (0, 3)]:
+            sedge(ax, grp[i], grp[j], col, lw=0.8, rad=0.2, alpha=0.3)
     for a, b in [(0, 1), (2, 3), (4, 5), (3, 6), (2, 4), (1, 3), (6, 7), (3, 7)]:
         sedge(ax, G[a], G[b], GREY, lw=0.9, rad=0.15, alpha=0.8)
-    for src, dst in [(G[2], A[2]), (G[0], A[4]), (G[2], B[3]), (G[4], B[2])]:
-        sedge(ax, src, dst, GREY, lw=1.0, rad=0.1, alpha=0.9, arrow=True)
-    for src in A[2:4]:
+    for dst in A:
+        sedge(ax, G[2], dst, GREY, lw=0.9, rad=0.1, alpha=0.8, arrow=True)
+    for dst in B:
+        sedge(ax, G[4], dst, GREY, lw=0.9, rad=0.1, alpha=0.8, arrow=True)
+    for src in A:
         for dst in (G[1], G[6]):
-            sedge(ax, src, dst, CORAL, lw=1.1, rad=0.1, alpha=0.85, arrow=True)
-    for src in B[2:4]:
-        for dst in (G[4], G[7]):
-            sedge(ax, src, dst, TEAL, lw=1.1, rad=0.1, alpha=0.85, arrow=True)
+            sedge(ax, src, dst, CORAL, lw=1.0, rad=0.1, alpha=0.7, arrow=True)
+    for src in B:
+        for dst in (G[5], G[7]):
+            sedge(ax, src, dst, TEAL, lw=1.0, rad=0.1, alpha=0.7, arrow=True)
     for xy in G:
         snode(ax, xy, GREY)
     for xy in A:
@@ -88,7 +89,7 @@ def panel_scheme(ax):
     for xy in B:
         snode(ax, xy, TEAL)
     ax.text(5.0, 10.0, "network", ha="center", fontsize=9, color=INK, weight="bold")
-    ax.text(5.0, 0.55, "activity $S_i(t)$ only is observed", ha="center", fontsize=7.5, color="0.4", style="italic")
+    ax.text(5.0, 0.55, "only the activity $S_i(t)$ is observed", ha="center", fontsize=7.5, color="0.4", style="italic")
     # ---- stage 2: inferred couplings and similarity
     x0, y0, cell = 11.3, 2.6, 0.62
     import itertools
@@ -112,12 +113,10 @@ def panel_scheme(ax):
     ax.text(x0 - 0.3, y0 + 4 * cell, "post", ha="right", va="center", fontsize=7.5, color="0.4", rotation=90)
     ax.text(x0 + 4 * cell, y0 - 0.35, "pre", ha="center", va="top", fontsize=7.5, color="0.4")
     # brackets: rows with the same in/out vectors
-    for (r0, r1, col, lab) in [(0, 3, CORAL, "same inputs\nand outputs"), (3, 6, TEAL, "")]:
+    for (r0, r1, col) in [(0, 3, CORAL), (3, 6, TEAL)]:
         ax.plot([x0 + 8 * cell + 0.25] * 2, [y0 + (8 - r1) * cell + 0.08, y0 + (8 - r0) * cell - 0.08], color=col, lw=2.2, solid_capstyle="round", zorder=3)
-        if lab:
-            ax.text(x0 + 8 * cell + 0.5, y0 + (8 - r0 - 1.5) * cell, lab, ha="left", va="center", fontsize=7.5, color=col)
-    ax.text(x0 + 8 * cell + 0.5, y0 + (8 - 4.5) * cell, "same inputs\nand outputs", ha="left", va="center", fontsize=7.5, color=TEAL)
-    ax.text(x0 + 4 * cell + 1.2, 0.55, "group units with similar in/out vectors", ha="center", fontsize=7.5, color="0.4", style="italic")
+    ax.text(x0 + 8 * cell + 0.55, y0 + (8 - 3) * cell, "units with the same\ninputs and outputs\n$\\to$ one block\n(one colour)", ha="left", va="center", fontsize=7.5, color=INK, linespacing=1.3)
+    ax.text(x0 + 4 * cell + 1.2, 0.55, "group units with the same rows and columns of $J$", ha="center", fontsize=7.5, color="0.4", style="italic")
     # ---- stage 3: coarse-grained network
     bA, bB = (23.0, 7.2), (23.0, 3.2)
     bG = [(26.3, 7.7), (26.0, 5.1), (26.6, 2.6), (28.6, 6.6), (28.4, 3.7)]

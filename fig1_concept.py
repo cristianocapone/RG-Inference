@@ -50,19 +50,14 @@ def matrix(ax, x0, y0, cells, cell=0.55, labels=None):
             ax.text(x0 + (k + 0.5) * cell, y0 - 0.25, lab, ha="center", va="top", fontsize=6.5, color=col)
 
 
-def row(ax, rule):
-    """One row of panel a: network -> similarity -> coarse-grained network."""
-    ax.set_xlim(0, 30); ax.set_ylim(0, 8.6); ax.set_aspect("equal"); ax.axis("off")
-    corr = rule == "correlation"
-    col, card, title = (OLIVE, CARD_OLIVE, "group by correlation") if corr else (RED, CARD_RED, "group by inferred in/out couplings")
-    ax.add_patch(FancyBboxPatch((0.3, 0.3), 29.4, 8.0, boxstyle="round,pad=0.1,rounding_size=0.5", fc=card, ec="none", zorder=0))
-    ax.text(0.9, 8.0, title, fontsize=9, color=col, weight="bold", va="top")
-    # ---- the network (identical in both rows)
-    src = (2.2, 4.2)
-    A = [(5.0, 5.9), (5.0, 4.9)]
-    B = [(5.0, 3.5), (5.0, 2.5)]
-    TA = [(8.2, 6.2), (8.2, 5.1)]
-    TB = [(8.2, 3.3), (8.2, 2.2)]
+def _network(ax, ox, oy, caption):
+    """The micro network (identical for both rules), drawn with its lower-left corner at (ox, oy)."""
+    o = np.array([ox, oy])
+    src = tuple(o + (0.9, 2.9))
+    A = [tuple(o + (3.7, 4.6)), tuple(o + (3.7, 3.6))]
+    B = [tuple(o + (3.7, 2.2)), tuple(o + (3.7, 1.2))]
+    TA = [tuple(o + (6.9, 4.9)), tuple(o + (6.9, 3.8))]
+    TB = [tuple(o + (6.9, 2.0)), tuple(o + (6.9, 0.9))]
     for xy in A + B:
         edge(ax, src, xy, GREY, rad=0.05)
     for a in A:
@@ -80,39 +75,39 @@ def row(ax, rule):
         node(ax, xy, "white", ring=CORAL)
     for xy in TB:
         node(ax, xy, "white", ring=TEAL)
-    ax.text(5.0, 6.75, "A", ha="center", fontsize=8, color=CORAL, weight="bold")
-    ax.text(5.0, 1.55, "B", ha="center", fontsize=8, color=TEAL, weight="bold")
-    ax.text(8.2, 7.1, "targets", ha="center", fontsize=6.5, color="0.45")
-    ax.text(5.2, 0.75, "A and B fire together, project to different targets", ha="center", fontsize=6.8, color="0.4", style="italic")
-    # ---- the similarity used for grouping
-    ax.add_patch(FancyArrowPatch((9.8, 4.3), (11.3, 4.3), arrowstyle="-|>", mutation_scale=11, lw=1.3, color="0.5", capstyle="round"))
+    ax.text(ox + 3.7, oy + 5.45, "A", ha="center", fontsize=8, color=CORAL, weight="bold")
+    ax.text(ox + 3.7, oy + 0.25, "B", ha="center", fontsize=8, color=TEAL, weight="bold")
+    ax.text(ox + 6.9, oy + 5.8, "targets", ha="center", fontsize=6.5, color="0.45")
+    ax.text(ox + 3.9, oy - 0.55, caption, ha="center", va="center", fontsize=6.8, color="0.4", style="italic", linespacing=1.25)
+
+
+def _similarity(ax, ox, oy, corr, col, sub):
     labs = [("A", CORAL), ("A", CORAL), ("B", TEAL), ("B", TEAL)]
-    x0, y0 = 13.0, 2.6
     if corr:
         cells = [[("white" if i == j else ORANGE) for j in range(4)] for i in range(4)]
-        head, sub = "similarity of the activities", "A and B are correlated:\nindistinguishable"
+        head = "similarity of the activities"
     else:
         cells = [[("white" if i == j else (CORAL if (i < 2 and j < 2) else TEAL if (i >= 2 and j >= 2) else "#ececec")) for j in range(4)] for i in range(4)]
-        head, sub = "similarity of in/out couplings", "A and B have different outputs:\ntwo groups"
-    matrix(ax, x0, y0, cells, labels=labs)
-    ax.text(x0 + 1.1, 5.7, head, ha="center", fontsize=7.5, color=INK, weight="bold")
-    ax.text(x0 + 1.1, 1.75, sub, ha="center", va="top", fontsize=6.8, color=col, style="italic", linespacing=1.25)
-    # ---- the coarse-grained network
-    ax.add_patch(FancyArrowPatch((17.3, 4.3), (18.8, 4.3), arrowstyle="-|>", mutation_scale=11, lw=1.3, color="0.5", capstyle="round"))
-    ax.text(18.05, 4.9, "group", ha="center", fontsize=7, color="0.4")
-    src2 = (20.6, 4.2)
-    TA2 = [(26.6, 6.2), (26.6, 5.1)]
-    TB2 = [(26.6, 3.3), (26.6, 2.2)]
+        head = "similarity of in/out couplings"
+    matrix(ax, ox + 1.3, oy + 1.3, cells, labels=labs)
+    ax.text(ox + 2.4, oy + 4.4, head, ha="center", fontsize=7.5, color=INK, weight="bold")
+    ax.text(ox + 2.4, oy + 0.45, sub, ha="center", va="top", fontsize=6.8, color=col, style="italic", linespacing=1.25)
+
+
+def _coarse(ax, ox, oy, corr, col, caption):
+    o = np.array([ox, oy])
+    src2 = tuple(o + (0.9, 2.9))
+    TA2 = [tuple(o + (6.9, 4.9)), tuple(o + (6.9, 3.8))]
+    TB2 = [tuple(o + (6.9, 2.0)), tuple(o + (6.9, 0.9))]
     if corr:
-        blk = (23.4, 4.2)
+        blk = tuple(o + (3.7, 2.9))
         edge(ax, src2, blk, GREY, rad=0.0, r=0.6)
         for t in TA2 + TB2:
             edge(ax, blk, t, "0.55", lw=1.3, r=0.6)
         node(ax, blk, ORANGE, r=0.72)
-        ax.text(23.4, 3.1, "A+B", ha="center", va="top", fontsize=7, color=INK)
-        ax.text(25.0, 0.75, "one block, two targets: direction lost", ha="center", fontsize=6.8, color=col, style="italic")
+        ax.text(ox + 3.7, oy + 1.8, "A+B", ha="center", va="top", fontsize=7, color=INK)
     else:
-        bA, bB = (23.4, 5.4), (23.4, 3.0)
+        bA, bB = tuple(o + (3.7, 4.1)), tuple(o + (3.7, 1.7))
         for blk in (bA, bB):
             edge(ax, src2, blk, GREY, rad=0.05, r=0.5)
         for t in TA2:
@@ -121,14 +116,55 @@ def row(ax, rule):
             edge(ax, bB, t, TEAL, lw=1.4, r=0.5)
         node(ax, bA, CORAL, r=0.55)
         node(ax, bB, TEAL, r=0.55)
-        ax.text(23.4, 6.45, "A", ha="center", fontsize=7, color=CORAL, weight="bold")
-        ax.text(23.4, 1.95, "B", ha="center", va="top", fontsize=7, color=TEAL, weight="bold")
-        ax.text(25.0, 0.75, "two blocks, each with its target: direction kept", ha="center", fontsize=6.8, color=col, style="italic")
+        ax.text(ox + 3.7, oy + 5.15, "A", ha="center", fontsize=7, color=CORAL, weight="bold")
+        ax.text(ox + 3.7, oy + 0.65, "B", ha="center", va="top", fontsize=7, color=TEAL, weight="bold")
     node(ax, src2, GREY)
     for xy in TA2:
         node(ax, xy, "white", ring=CORAL)
     for xy in TB2:
         node(ax, xy, "white", ring=TEAL)
+    ax.text(ox + 5.3, oy - 0.55, caption, ha="center", va="center", fontsize=6.8, color=col, style="italic", linespacing=1.25)
+
+
+def _arrow(ax, a, b, label=None, label_dxy=(0, 0.6)):
+    ax.add_patch(FancyArrowPatch(a, b, arrowstyle="-|>", mutation_scale=11, lw=1.3, color="0.5", capstyle="round"))
+    if label:
+        ax.text((a[0] + b[0]) / 2 + label_dxy[0], (a[1] + b[1]) / 2 + label_dxy[1], label, ha="center", va="center", fontsize=7, color="0.4")
+
+
+def row(ax, rule, vertical=False):
+    """One card of panel a: network -> similarity -> coarse-grained network, laid out left-to-right
+    (vertical=False) or top-to-bottom (vertical=True)."""
+    corr = rule == "correlation"
+    col, card, title = (OLIVE, CARD_OLIVE, "group by correlation") if corr else (RED, CARD_RED, "group by inferred in/out couplings")
+    if corr:
+        sub, cap2 = "A and B are correlated:\nindistinguishable", "one block, two targets: direction lost"
+    else:
+        sub, cap2 = "A and B have different outputs:\ntwo groups", "two blocks, each with its target: direction kept"
+    cap1 = "A and B fire together, project to different targets"
+    ax.set_aspect("equal"); ax.axis("off")
+    if not vertical:
+        ax.set_xlim(0, 30); ax.set_ylim(0, 8.6)
+        ax.add_patch(FancyBboxPatch((0.3, 0.3), 29.4, 8.0, boxstyle="round,pad=0.1,rounding_size=0.5", fc=card, ec="none", zorder=0))
+        ax.text(0.9, 8.0, title, fontsize=9, color=col, weight="bold", va="top")
+        _network(ax, 1.3, 1.3, cap1)
+        _arrow(ax, (9.8, 4.3), (11.3, 4.3))
+        _similarity(ax, 11.7, 1.3, corr, col, sub)
+        _arrow(ax, (17.3, 4.3), (18.8, 4.3), "group")
+        _coarse(ax, 19.7, 1.3, corr, col, cap2)
+    else:
+        W, H = 10.4, 25.0
+        ax.set_xlim(0, W); ax.set_ylim(0, H)
+        ax.add_patch(FancyBboxPatch((0.3, 0.3), W - 0.6, H - 0.6, boxstyle="round,pad=0.1,rounding_size=0.5", fc=card, ec="none", zorder=0))
+        ax.text(W / 2, H - 0.7, title.replace("inferred in/out couplings", "inferred\nin/out couplings"), fontsize=9, color=col, weight="bold", va="top", ha="center", linespacing=1.15)
+        y_net = H - 2.9 - 5.8
+        _network(ax, 1.2, y_net, cap1.replace(", project", ",\nproject"))
+        _arrow(ax, (W / 2, y_net - 1.2), (W / 2, y_net - 2.2))
+        y_sim = y_net - 2.5 - 4.6
+        _similarity(ax, W / 2 - 2.4, y_sim, corr, col, sub)
+        _arrow(ax, (W / 2, y_sim - 0.9), (W / 2, y_sim - 1.9), "group", label_dxy=(1.3, 0))
+        y_cg = y_sim - 2.1 - 5.4
+        _coarse(ax, 1.2, y_cg, corr, col, cap2.replace(": ", ":\n"))
 
 
 def panel_result(ax):
@@ -176,18 +212,44 @@ def panel_result(ax):
 
 
 def main():
+    os.makedirs("Figures", exist_ok=True)
+    # ---- stacked: two horizontal cards on top, result below (manuscript version)
     fig = plt.figure(figsize=(8.8, 7.6))
     gs = fig.add_gridspec(3, 6, height_ratios=[1, 1, 1.45], hspace=0.08, wspace=0.0, left=0.03, right=0.99, top=0.97, bottom=0.07)
     row(fig.add_subplot(gs[0, :]), "correlation")
     row(fig.add_subplot(gs[1, :]), "inference")
     fig.text(0.01, 0.975, "a", fontsize=11, weight="bold")
-    ax = fig.add_subplot(gs[2, 1:5])
-    panel_result(ax)
+    panel_result(fig.add_subplot(gs[2, 1:5]))
     fig.text(0.01, 0.40, "b", fontsize=11, weight="bold")
-    os.makedirs("Figures", exist_ok=True)
     fig.savefig("Figures/Fig1_concept.png", dpi=200)
     fig.savefig("Figures/Fig1_concept.pdf")
-    print("saved Figures/Fig1_concept.png / .pdf")
+    plt.close(fig)
+    # ---- row3: three panels side by side (two vertical cards, result)
+    fig = plt.figure(figsize=(11.0, 6.6))
+    gs = fig.add_gridspec(1, 3, width_ratios=[1, 1, 1.45], wspace=0.08, left=0.02, right=0.99, top=0.97, bottom=0.03)
+    row(fig.add_subplot(gs[0, 0]), "correlation", vertical=True)
+    row(fig.add_subplot(gs[0, 1]), "inference", vertical=True)
+    fig.text(0.01, 0.965, "a", fontsize=11, weight="bold")
+    ax = fig.add_subplot(gs[0, 2])
+    panel_result(ax)
+    pos = ax.get_position(); ax.set_position([pos.x0 + 0.07, 0.30, pos.width - 0.08, 0.42])
+    fig.text(pos.x0 + 0.01, 0.965, "b", fontsize=11, weight="bold")
+    fig.savefig("Figures/Fig1_concept_row3.png", dpi=200)
+    fig.savefig("Figures/Fig1_concept_row3.pdf")
+    plt.close(fig)
+    # ---- cols: two horizontal cards stacked on the left, result on the right
+    fig = plt.figure(figsize=(12.6, 5.0))
+    gs = fig.add_gridspec(2, 2, width_ratios=[1.75, 1], hspace=0.06, wspace=0.12, left=0.02, right=0.98, top=0.95, bottom=0.05)
+    row(fig.add_subplot(gs[0, 0]), "correlation")
+    row(fig.add_subplot(gs[1, 0]), "inference")
+    fig.text(0.01, 0.955, "a", fontsize=11, weight="bold")
+    ax = fig.add_subplot(gs[:, 1])
+    panel_result(ax)
+    pos = ax.get_position(); ax.set_position([pos.x0 + 0.05, 0.17, pos.width - 0.06, 0.68])
+    fig.text(pos.x0 + 0.005, 0.955, "b", fontsize=11, weight="bold")
+    fig.savefig("Figures/Fig1_concept_cols.png", dpi=200)
+    fig.savefig("Figures/Fig1_concept_cols.pdf")
+    print("saved Figures/Fig1_concept{,_row3,_cols}.png / .pdf")
 
 
 if __name__ == "__main__":

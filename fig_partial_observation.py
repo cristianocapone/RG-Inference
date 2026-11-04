@@ -10,6 +10,13 @@ sufficient part of the circuit that generates the directional dynamics.
      (colour = directedness of the culture)      [results/partial_observation_cultures.npz]
  (c) Stringer mice, spontaneous: advantage vs number of observed units, 64 to 2048
      random units                                [results/invivo_density.npz]
+ (d) Allen Brain Observatory, final pipeline: visual stimuli vs spontaneous activity,
+     change of directedness and of the advantages  [results/allen_final/*.npz]
+ (e) CA1 (Grosmark & Buzsaki 2016): directedness and advantage by epoch and sleep state,
+     10 and 20 ms                                 [results/hc11/*.npz]
+ (f) synthesis at 10 ms: advantage of the inference-based reduction (output) against
+     directedness for every recording and condition: cultures, Stringer mice, Allen
+     condition-session pairs, CA1 epochs and states
 Directedness: noise-corrected lag-1 index (directedness.py).  The model-free rule
 (columns of the lag-1 cross-correlation, "lagged_out") is shown dashed in (a) and (c).
 The Allen Brain Observatory panels (old pipeline) are in supp_allen.py.
@@ -127,11 +134,64 @@ def panel_allen_density(ax):
     ax.set_title(f"(d) mice, Allen: more units (n = {len(rows)})", loc="left", fontsize=10)
 
 
+def panel_allen_final(ax):
+    import fig_allen_final as FA
+    FA.panel_stimuli(ax, FA.rows())
+    ax.set_title(ax.get_title(loc="left").replace("(a)", "(d) mice, Allen:"), loc="left", fontsize=10)
+
+
+def panel_hc11(ax):
+    rows = [dict(np.load(f)) for f in sorted(glob.glob("results/hc11/*.npz"))]
+    keys = [("PREEpoch", "PRE sleep"), ("MazeEpoch", "maze"), ("POSTEpoch", "POST sleep"), ("state_Non-REM", "NREM"), ("state_REM", "REM")]
+    x = np.arange(len(keys))
+    for j, (dt, alpha) in enumerate([(10, 1.0), (20, 0.45)]):
+        d = [np.array([r[f"{k}/{dt}"][0] for r in rows if f"{k}/{dt}" in r]) for k, _ in keys]
+        a = [np.array([r[f"{k}/{dt}"][2] for r in rows if f"{k}/{dt}" in r]) for k, _ in keys]
+        ax.bar(x + (j - 0.5) * 0.4 - 0.1, [v.mean() for v in d], 0.18, yerr=[v.std() / np.sqrt(len(v)) for v in d], color="0.35", alpha=alpha,
+               capsize=2, label=f"directedness, {dt} ms")
+        ax.bar(x + (j - 0.5) * 0.4 + 0.1, [v.mean() for v in a], 0.18, yerr=[v.std() / np.sqrt(len(v)) for v in a], color="#8b0000", alpha=alpha,
+               capsize=2, label=f"advantage of inference (output), {dt} ms")
+    ax.axhline(0, color="0.5", lw=0.8)
+    ax.set_xticks(x)
+    ax.set_xticklabels([lab for _, lab in keys], fontsize=8)
+    ax.legend(frameon=False, fontsize=6.5)
+    ax.set_title(f"(e) rat CA1, 8 sessions, 36-102 units", loc="left", fontsize=10)
+
+
+def panel_synthesis(ax):
+    from scipy.stats import spearmanr
+    cl, dr = np.load("results/closure.npz"), np.load("results/directedness.npz")
+    cults = ["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d15"]
+    xc = [float(dr[f"cultures/{c}/lag1"]) for c in cults]
+    yc = [np.nanmean((cl[f"cultures/{c}/inference_out/closure"] - cl[f"cultures/{c}/correlation/closure"])[1:7]) for c in cults]
+    ax.scatter(xc, yc, s=50, color="#8b0000", label="cultures (9)", zorder=4)
+    xm = [float(dr[f"mice/{m}/lag1"]) for m in ["Krebs", "Waksman", "Robbins"]]
+    ym = [np.nanmean((cl[f"mice/{m}/inference_out/closure"] - cl[f"mice/{m}/correlation/closure"])[1:7]) for m in ["Krebs", "Waksman", "Robbins"]]
+    ax.scatter(xm, ym, s=45, marker="s", color="#1f77b4", label="mice, 8 probes, spontaneous (3)", zorder=4)
+    al = [dict(np.load(f)) for f in sorted(glob.glob("results/allen_final/*.npz"))]
+    xa = [r[k][0] for r in al if "skipped" not in r for k in r if k.startswith("top/")]
+    ya = [r[k][2] for r in al if "skipped" not in r for k in r if k.startswith("top/")]
+    ax.scatter(xa, ya, s=12, marker="^", color="#6baed6", alpha=0.7, label=f"mice, visual stimuli and rest ({len(xa)})", zorder=3)
+    hc = [dict(np.load(f)) for f in sorted(glob.glob("results/hc11/*.npz"))]
+    xh = [r[k][0] for r in hc for k in r if k.endswith("/10")]
+    yh = [r[k][2] for r in hc for k in r if k.endswith("/10")]
+    ax.scatter(xh, yh, s=14, marker="D", color="#2a9d8f", alpha=0.8, label=f"rat CA1, epochs and states ({len(xh)})", zorder=3)
+    xv, yv = np.r_[xm, xa, xh], np.r_[ym, ya, yh]
+    ax.axhline(0, color="0.6", ls=":")
+    ax.set_xlabel("directedness at lag 1 (noise-corrected), 10-ms bins")
+    ax.set_ylabel("advantage of inference (output) over correlation")
+    ax.legend(frameon=False, fontsize=6.5, loc="upper left")
+    ax.set_title(f"(f) all recordings: in vivo rho = {spearmanr(xv, yv)[0]:.2f} (n = {len(xv)})", loc="left", fontsize=10)
+
+
 def main():
-    fig, axs = plt.subplots(1, 3, figsize=(15, 4.3), gridspec_kw=dict(width_ratios=[1, 1.1, 0.9]))
-    panel_sim(axs[0])
-    panel_cultures(axs[1])
-    panel_density(axs[2])
+    fig, axs = plt.subplots(2, 3, figsize=(16, 9), gridspec_kw=dict(width_ratios=[1, 1.1, 0.9]))
+    panel_sim(axs[0, 0])
+    panel_cultures(axs[0, 1])
+    panel_density(axs[0, 2])
+    panel_allen_final(axs[1, 0])
+    panel_hc11(axs[1, 1])
+    panel_synthesis(axs[1, 2])
     fig.tight_layout()
     os.makedirs("Figures", exist_ok=True)
     fig.savefig("Figures/Fig_partial_observation.png", dpi=200)

@@ -46,6 +46,9 @@ $PY fig4_new.py
 $PY partial_observation.py                                  # ~5 min
 $PY partial_observation_cultures.py                         # ~10 min
 $PY allen_rest_vs_task.py                                   # 32 sessions streamed from DANDI, ~1 h
+$PY allen_final.py                                          # Allen, final pipeline (streams ~32 GB; ~2.5 h)
+$PY hc11_sequences.py                                       # rat CA1, DANDI 000044 (streams ~1 GB; ~30 min)
+$PY dimred_comparison.py                                    # PCA / RRR / NMF closure at matched dimension
 $PY fig_partial_observation.py
 $PY supp_allen.py                                           # supplementary: Allen (preliminary, earlier pipeline)
 $PY invivo_local.py

@@ -33,7 +33,7 @@ Tested with Python 3.12, numpy 2.4, scipy 1.17, matplotlib, scikit-learn 1.9.
 |---|---|---|---|
 | `data/lonardoni2017_spont` | spontaneous activity of rat hippocampal cultures, 3Brain 4096-electrode CMOS-MEA, thresholded multi-unit activity | Lonardoni et al. 2017, *PLoS Comput Biol* 13:e1005672; Zenodo 4977727 | CC0 |
 | `data/lonardoni2017_drug` | same cultures, basal vs bicuculline / APV | same | CC0 |
-| Allen Brain Observatory, Visual Coding Neuropixels | streamed from DANDI 000021 by `allen_rest_vs_task.py` (no download needed) | Allen Institute; DANDI 000021 | CC BY 4.0 |
+| Allen Brain Observatory, Visual Coding Neuropixels | streamed from DANDI 000021 by `allen_final.py` (no download needed) | Allen Institute; DANDI 000021 | CC BY 4.0 |
 | `data/stringer2019_neuropixels` | eight-probe Neuropixels, 3 mice, spontaneous period | Stringer et al. 2019, *Science* 364:eaav7893; figshare 10.25378/janelia.7739750 | CC BY-NC 4.0 |
 
 ## Code map
@@ -71,8 +71,11 @@ Tested with Python 3.12, numpy 2.4, scipy 1.17, matplotlib, scikit-learn 1.9.
 | Suppl.: symmetry vs surrogate | `supp_symmetry.py` (figure); `real_data_rg.py`, `real_data_surrogate.py`, `null_autocorr_symmetry.py`, `excess_symmetry_sim.py` |
 | Suppl.: robustness (bin size, unit selection) | `robustness.py` |
 | Fig. 5, partial observation (simulation, cultures, mice) | `fig_partial_observation.py`, using `partial_observation.py`, `partial_observation_cultures.py`, `allen_rest_vs_task.py` |
+| Fig. 5d, Allen Brain Observatory with the final pipeline (streamed, ~1 GB/session, 32 sessions) | `allen_final.py` (analysis), `fig_allen_final.py` (stand-alone figure) |
+| Fig. 5e, rat CA1 epochs and sleep states (DANDI 000044, streamed, ~0.1 GB/session) | `hc11_sequences.py` |
+| Suppl.: closure of non-grouping reductions (PCA, reduced-rank regression, NMF) at matched dimension | `dimred_comparison.py` |
 | Cover-letter figure | `cover_figure.py` |
-| Suppl.: Allen Brain Observatory, preliminary (earlier pipeline; streamed, ~1 GB per session) | `supp_allen.py`, using `allen_rest_vs_task.py` and `allen_density.py` |
+| Earlier Allen analyses (first pipeline, kept for reference) | `supp_allen.py`, using `allen_rest_vs_task.py` and `allen_density.py` |
 | Suppl.: in vivo single probes | `invivo_local.py` |
 | Suppl.: perturbation transfer | `perturbation_transfer.py` (args: trials, amplitude, network) |
 | Suppl.: pairing variants, nMF vs ML | `pairing_tests.py` |

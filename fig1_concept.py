@@ -138,13 +138,15 @@ def panel_result(ax):
     yc = [np.nanmean((cl[f"cultures/{c}/inference_out/closure"] - cl[f"cultures/{c}/correlation/closure"])[1:7]) for c in cults]
     xv = [float(dr[f"mice/{m}/lag1"]) for m in ["Krebs", "Waksman", "Robbins"]]
     yv = [np.nanmean((cl[f"mice/{m}/inference_out/closure"] - cl[f"mice/{m}/correlation/closure"])[1:7]) for m in ["Krebs", "Waksman", "Robbins"]]
-    for f in sorted(glob.glob("results/allen_final/*.npz")):
+    for f in sorted(glob.glob("results/allen_final/*.npz")):  # one point per session: mean over conditions
         r = dict(np.load(f))
         if "skipped" not in r:
-            xv += [r[k][0] for k in r if k.startswith("top/")]; yv += [r[k][2] for k in r if k.startswith("top/")]
-    for f in sorted(glob.glob("results/hc11/*.npz")):
+            ks = [k for k in r if k.startswith("top/")]
+            xv.append(np.mean([r[k][0] for k in ks])); yv.append(np.mean([r[k][2] for k in ks]))
+    for f in sorted(glob.glob("results/hc11/*.npz")):  # one point per session: mean over epochs
         r = dict(np.load(f))
-        xv += [r[k][0] for k in r if k.endswith("/10")]; yv += [r[k][2] for k in r if k.endswith("/10")]
+        ks = [k for k in r if k.endswith("/10")]
+        xv.append(np.mean([r[k][0] for k in ks])); yv.append(np.mean([r[k][2] for k in ks]))
     xv, yv = np.array(xv), np.array(yv)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
@@ -152,14 +154,14 @@ def panel_result(ax):
         ax.spines[sp].set_color("0.6")
     ax.tick_params(colors="0.4", labelsize=7)
     ax.axhline(0, color="0.75", ls=":", lw=1)
-    ax.scatter(xv, yv, s=11, color="#9fb6c9", alpha=0.75, zorder=2)
+    ax.scatter(xv, yv, s=26, color="#9fb6c9", ec="white", lw=0.6, zorder=2)
     ax.scatter(xc, yc, s=46, color=RED, ec="white", lw=0.8, zorder=3)
     ax.set_xlabel("directedness of the dynamics", fontsize=8, color="0.35")
     ax.set_ylabel("advantage of inference\nover correlation", fontsize=8, color="0.35")
-    ax.set_xlim(-0.005, 0.26); ax.set_ylim(-0.12, 0.115)
+    ax.set_xlim(-0.005, 0.26); ax.set_ylim(-0.095, 0.115)
     ax.set_yticks([-0.1, 0, 0.1]); ax.set_xticks([0, 0.1, 0.2])
     ax.text(0.03, 0.095, "in vitro (9 cultures)", fontsize=8, color=RED, weight="bold")
-    ax.text(0.03, -0.1, f"in vivo ({len(xv)} recordings)", fontsize=8, color="#4a6f8f", weight="bold")
+    ax.text(0.03, -0.085, f"in vivo ({len(xv)} sessions)", fontsize=8, color="#4a6f8f", weight="bold")
 
 
 def main():

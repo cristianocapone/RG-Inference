@@ -11,7 +11,7 @@ Figure 1 of the manuscript: the idea and the distilled result.
      correlation-based one (closure, output similarity) against the directedness of the
      recording at the model's timescale, for the cultures and for every in-vivo
      recording and condition (results/closure.npz, directedness.npz, allen_final/, hc11/).
-Output: Figures/Fig1_concept.png / .pdf.  Run from the folder holding results/.
+Output: Figures/Fig1_concept{,_row3,_cols}.png / .pdf (the manuscript uses _cols).  Run from the folder holding results/.
 """
 
 import glob

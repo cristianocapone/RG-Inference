@@ -115,8 +115,9 @@ def panel_scheme(ax):
     # brackets: rows with the same in/out vectors
     for (r0, r1, col) in [(0, 3, CORAL), (3, 6, TEAL)]:
         ax.plot([x0 + 8 * cell + 0.25] * 2, [y0 + (8 - r1) * cell + 0.08, y0 + (8 - r0) * cell - 0.08], color=col, lw=2.2, solid_capstyle="round", zorder=3)
-    ax.text(x0 + 8 * cell + 0.55, y0 + (8 - 3) * cell, "units with the same\ninputs and outputs\n$\\to$ one block\n(one colour)", ha="left", va="center", fontsize=7.5, color=INK, linespacing=1.3)
-    ax.text(x0 + 4 * cell + 1.2, 0.55, "group units with the same rows and columns of $J$", ha="center", fontsize=7.5, color="0.4", style="italic")
+    ax.text(x0 + 8 * cell + 0.5, y0 + (8 - 1.5) * cell, "same\nin/out", ha="left", va="center", fontsize=7, color=CORAL)
+    ax.text(x0 + 8 * cell + 0.5, y0 + (8 - 4.5) * cell, "same\nin/out", ha="left", va="center", fontsize=7, color=TEAL)
+    ax.text(x0 + 4 * cell + 1.0, 0.55, "units with the same inputs and outputs $\\to$ one block (one colour)", ha="center", fontsize=7.5, color="0.4", style="italic")
     # ---- stage 3: coarse-grained network
     bA, bB = (23.0, 7.2), (23.0, 3.2)
     bG = [(26.3, 7.7), (26.0, 5.1), (26.6, 2.6), (28.6, 6.6), (28.4, 3.7)]
@@ -135,7 +136,7 @@ def panel_scheme(ax):
     ax.text(25.5, 10.0, "coarse-grained network", ha="center", fontsize=9, color=INK, weight="bold")
     ax.text(25.5, 0.55, "blocks keep their inputs and outputs", ha="center", fontsize=7.5, color="0.4", style="italic")
     # ---- arrows between stages
-    for xa, xb, lab in [(9.2, 10.9, "infer"), (18.6, 20.9, "group")]:
+    for xa, xb, lab in [(9.2, 10.9, "infer"), (19.0, 20.9, "group")]:
         ax.add_patch(FancyArrowPatch((xa, 5.4), (xb, 5.4), arrowstyle="-|>", mutation_scale=12, lw=1.4, color="0.45", capstyle="round"))
         ax.text((xa + xb) / 2, 5.95, lab, ha="center", fontsize=8, color="0.35")
     ax.annotate("", xy=(5.0, 9.3), xytext=(25.5, 9.3), arrowprops=dict(arrowstyle="-|>", lw=1.0, color="0.6", ls="--",

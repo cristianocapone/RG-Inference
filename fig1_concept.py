@@ -89,7 +89,7 @@ def panel_scheme(ax):
     for xy in B:
         snode(ax, xy, TEAL)
     ax.text(5.0, 10.0, "network", ha="center", fontsize=9, color=INK, weight="bold")
-    ax.text(5.0, 0.55, "only the activity $S_i(t)$ is observed", ha="center", fontsize=7.5, color="0.4", style="italic")
+    ax.text(5.0, 0.55, "only the activity $S_i(t)$\nis observed", ha="center", va="center", fontsize=7.5, color="0.4", style="italic", linespacing=1.3)
     # ---- stage 2: inferred couplings and similarity
     x0, y0, cell = 11.3, 2.6, 0.62
     import itertools
@@ -117,7 +117,7 @@ def panel_scheme(ax):
         ax.plot([x0 + 8 * cell + 0.25] * 2, [y0 + (8 - r1) * cell + 0.08, y0 + (8 - r0) * cell - 0.08], color=col, lw=2.2, solid_capstyle="round", zorder=3)
     ax.text(x0 + 8 * cell + 0.5, y0 + (8 - 1.5) * cell, "same\nin/out", ha="left", va="center", fontsize=7, color=CORAL)
     ax.text(x0 + 8 * cell + 0.5, y0 + (8 - 4.5) * cell, "same\nin/out", ha="left", va="center", fontsize=7, color=TEAL)
-    ax.text(x0 + 4 * cell + 1.0, 0.55, "units with the same inputs and outputs $\\to$ one block (one colour)", ha="center", fontsize=7.5, color="0.4", style="italic")
+    ax.text(x0 + 4 * cell + 0.6, 0.55, "same inputs and outputs\n$\\to$ one block (one colour)", ha="center", va="center", fontsize=7.5, color="0.4", style="italic", linespacing=1.3)
     # ---- stage 3: coarse-grained network
     bA, bB = (23.0, 7.2), (23.0, 3.2)
     bG = [(26.3, 7.7), (26.0, 5.1), (26.6, 2.6), (28.6, 6.6), (28.4, 3.7)]
@@ -134,7 +134,7 @@ def panel_scheme(ax):
     snode(ax, bA, CORAL, r=0.85)
     snode(ax, bB, TEAL, r=0.85)
     ax.text(25.5, 10.0, "coarse-grained network", ha="center", fontsize=9, color=INK, weight="bold")
-    ax.text(25.5, 0.55, "blocks keep their inputs and outputs", ha="center", fontsize=7.5, color="0.4", style="italic")
+    ax.text(25.5, 0.55, "blocks keep their\ninputs and outputs", ha="center", va="center", fontsize=7.5, color="0.4", style="italic", linespacing=1.3)
     # ---- arrows between stages
     for xa, xb, lab in [(9.2, 10.9, "infer"), (19.0, 20.9, "group")]:
         ax.add_patch(FancyArrowPatch((xa, 5.4), (xb, 5.4), arrowstyle="-|>", mutation_scale=12, lw=1.4, color="0.45", capstyle="round"))

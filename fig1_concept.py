@@ -138,38 +138,41 @@ def panel_result(ax):
     yc = [np.nanmean((cl[f"cultures/{c}/inference_out/closure"] - cl[f"cultures/{c}/correlation/closure"])[1:7]) for c in cults]
     xv = [float(dr[f"mice/{m}/lag1"]) for m in ["Krebs", "Waksman", "Robbins"]]
     yv = [np.nanmean((cl[f"mice/{m}/inference_out/closure"] - cl[f"mice/{m}/correlation/closure"])[1:7]) for m in ["Krebs", "Waksman", "Robbins"]]
+    src = ["cortex, 2-photon"] * 3
     for f in sorted(glob.glob("results/allen_final/*.npz")):  # one point per session: mean over conditions
         r = dict(np.load(f))
         if "skipped" not in r:
             ks = [k for k in r if k.startswith("top/")]
-            xv.append(np.mean([r[k][0] for k in ks])); yv.append(np.mean([r[k][2] for k in ks]))
+            xv.append(np.mean([r[k][0] for k in ks])); yv.append(np.mean([r[k][2] for k in ks])); src.append("cortex, Neuropixels")
     for f in sorted(glob.glob("results/hc11/*.npz")):  # one point per session: mean over epochs
         r = dict(np.load(f))
         ks = [k for k in r if k.endswith("/10")]
-        xv.append(np.mean([r[k][0] for k in ks])); yv.append(np.mean([r[k][2] for k in ks]))
-    xv, yv = np.array(xv), np.array(yv)
+        xv.append(np.mean([r[k][0] for k in ks])); yv.append(np.mean([r[k][2] for k in ks])); src.append("hippocampus")
+    xv, yv, src = np.array(xv), np.array(yv), np.array(src)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
     for sp in ("left", "bottom"):
         ax.spines[sp].set_color("0.6")
     ax.tick_params(colors="0.4", labelsize=7)
     ax.axhline(0, color="0.75", ls=":", lw=1)
-    def binned(x, y, nb):  # mean +/- s.e.m. over equal-count bins of directedness
-        o = np.argsort(x)
-        out = []
-        for ix in np.array_split(o, nb):
-            bx, by = np.asarray(x)[ix], np.asarray(y)[ix]
-            out.append((bx.mean(), bx.std(ddof=1) / np.sqrt(len(ix)), by.mean(), by.std(ddof=1) / np.sqrt(len(ix))))
-        return np.array(out).T
-    for x, y, nb, c, z in [(xv, yv, 4, "#7a9ab8", 2), (xc, yc, 3, RED, 3)]:
-        mx, ex, my, ey = binned(x, y, nb)
-        ax.errorbar(mx, my, xerr=ex, yerr=ey, fmt="o-", color=c, ms=7, mec="white", mew=0.8, lw=1.2, capsize=2.5, zorder=z)
+
+    def msem(v):
+        v = np.asarray(v)
+        return v.mean(), v.std(ddof=1) / np.sqrt(len(v))
+
+    BLUE = "#7a9ab8"  # in vivo: one point, mean over all sessions
+    (mx, ex), (my, ey) = msem(xv), msem(yv)
+    ax.errorbar(mx, my, xerr=ex, yerr=ey, fmt="o", color=BLUE, ms=8, mec="white", mew=0.8, capsize=2.5, zorder=2)
+    o = np.argsort(xc)  # in vitro: tertiles of directedness
+    pts = [(msem(np.asarray(xc)[ix]), msem(np.asarray(yc)[ix])) for ix in np.array_split(o, 3)]
+    ax.errorbar([p[0][0] for p in pts], [p[1][0] for p in pts], xerr=[p[0][1] for p in pts], yerr=[p[1][1] for p in pts],
+                fmt="o-", color=RED, ms=7, mec="white", mew=0.8, lw=1.2, capsize=2.5, zorder=3)
     ax.set_xlabel("directedness of the dynamics", fontsize=8, color="0.35")
     ax.set_ylabel("advantage of inference\nover correlation", fontsize=8, color="0.35")
-    ax.set_xlim(-0.005, 0.26); ax.set_ylim(-0.075, 0.115)
+    ax.set_xlim(-0.005, 0.26); ax.set_ylim(-0.06, 0.115)
     ax.set_yticks([-0.05, 0, 0.05, 0.1]); ax.set_xticks([0, 0.1, 0.2])
     ax.text(0.03, 0.095, "in vitro (9 cultures, tertiles)", fontsize=8, color=RED, weight="bold")
-    ax.text(0.03, -0.062, f"in vivo ({len(xv)} sessions, quartiles)", fontsize=8, color="#4a6f8f", weight="bold")
+    ax.text(0.03, -0.045, f"in vivo ({len(xv)} sessions)", fontsize=8, color="#4a6f8f", weight="bold")
 
 
 def main():

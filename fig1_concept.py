@@ -132,7 +132,6 @@ def row(ax, rule):
 
 
 def panel_result(ax):
-    from scipy.stats import spearmanr
     cl, dr = np.load("results/closure.npz"), np.load("results/directedness.npz")
     cults = ["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d15"]
     xc = [float(dr[f"cultures/{c}/lag1"]) for c in cults]
@@ -153,17 +152,14 @@ def panel_result(ax):
         ax.spines[sp].set_color("0.6")
     ax.tick_params(colors="0.4", labelsize=7)
     ax.axhline(0, color="0.75", ls=":", lw=1)
-    ax.scatter(xv, yv, s=11, color="#9fb6c9", alpha=0.75, label=f"in vivo: cortex and hippocampus, rest, stimuli, sleep ({len(xv)})", zorder=2)
-    ax.scatter(xc, yc, s=46, color=RED, ec="white", lw=0.8, label="cultured networks (9)", zorder=3)
-    rho = spearmanr(xc, yc)[0]
-    ax.set_xlabel("directedness of the recorded dynamics at the model's timescale", fontsize=7.5, color="0.35")
-    ax.set_ylabel("advantage of inference over correlation\n(closure of the reduced dynamics)", fontsize=7.5, color="0.35")
+    ax.scatter(xv, yv, s=11, color="#9fb6c9", alpha=0.75, zorder=2)
+    ax.scatter(xc, yc, s=46, color=RED, ec="white", lw=0.8, zorder=3)
+    ax.set_xlabel("directedness of the dynamics", fontsize=8, color="0.35")
+    ax.set_ylabel("advantage of inference\nover correlation", fontsize=8, color="0.35")
     ax.set_xlim(-0.005, 0.26); ax.set_ylim(-0.12, 0.115)
-    ax.legend(frameon=False, fontsize=6.8, loc="upper left")
-    ax.annotate("in vitro: inference pays off\nwhere the dynamics is directional", xy=(0.222, 0.092), xytext=(0.115, 0.062),
-                fontsize=7, color=RED, ha="left", va="center", arrowprops=dict(arrowstyle="-", color=RED, lw=0.8, alpha=0.6))
-    ax.annotate("in vivo: same directedness, no advantage:\nthe interacting units are not recorded", xy=(0.145, -0.035), xytext=(0.125, -0.085),
-                fontsize=7, color="#4a6f8f", ha="left", va="center", arrowprops=dict(arrowstyle="-", color="#4a6f8f", lw=0.8, alpha=0.6))
+    ax.set_yticks([-0.1, 0, 0.1]); ax.set_xticks([0, 0.1, 0.2])
+    ax.text(0.03, 0.095, "in vitro (9 cultures)", fontsize=8, color=RED, weight="bold")
+    ax.text(0.03, -0.1, f"in vivo ({len(xv)} recordings)", fontsize=8, color="#4a6f8f", weight="bold")
 
 
 def main():

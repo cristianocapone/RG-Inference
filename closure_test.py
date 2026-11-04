@@ -24,7 +24,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from repro_figures_v2 import infer_J, greedy_pairs, synaptic_similarity
+from repro_figures_v2 import infer_J, greedy_pairs, synaptic_similarity, _FG, _HG, _FPG
 from rg_metrics import pairs_for
 from real_data_rg import load_culture
 from invivo_stringer import bin_mouse, MICE
@@ -59,6 +59,36 @@ def pairs5(rule, S, J, rng):
     return pairs_for(rule, S, J, rng)
 
 
+def infer_J_ridge(S, level, lam=0.1):
+    """Mean-field inversion with a ridge on the equal-time covariance: J = D (C + lam tr(C)/N I)^-1 / f'."""
+    S = np.asarray(S, float)
+    T, N = S.shape
+    m = S.mean(0)
+    d = S - m
+    C = d.T @ d / T
+    C += lam * np.trace(C) / N * np.eye(N)
+    D = d[1:].T @ d[:-1] / (T - 1)
+    mc = np.clip(m, 1e-4, 1 - 1e-4)
+    fp = mc * (1 - mc) if level == 0 else np.interp(np.interp(mc, _FG, _HG), _HG, _FPG)
+    J = np.linalg.solve(C.T, D.T).T / fp[:, None]
+    np.fill_diagonal(J, 0)
+    return J
+
+
+def infer_J_est(S, level, estimator="nmf"):
+    """Coupling estimator used for the pairing: 'nmf' (plain mean-field inversion, the default
+    everywhere in the paper), 'ridge' (regularised inversion), 'ml' (exact maximum likelihood,
+    L2 1e-4, warm start from the ridge solution)."""
+    if estimator == "nmf":
+        return infer_J(S, level)
+    if estimator == "ridge":
+        return infer_J_ridge(S, level)
+    if estimator == "ml":
+        from ml_kinetic_ising import fit_kinetic_ising
+        return fit_kinetic_ising(S, nlev=2 ** level, l2=1e-4, maxiter=150, J0=infer_J_ridge(S, level))[0]
+    raise ValueError(estimator)
+
+
 def _fit(Xtr, Ytr, ridge):
     C = Xtr.T @ Xtr / len(Xtr)
     C += ridge * np.trace(C) / len(C) * np.eye(len(C), dtype=C.dtype)
@@ -88,7 +118,7 @@ def closure(S0, M, frac=FRAC):
     return r2c, r2m
 
 
-def rg_closure(B, rule, n_levels, seed=0):
+def rg_closure(B, rule, n_levels, seed=0, estimator="nmf"):
     rng = np.random.default_rng(seed)
     S0 = B.astype(np.float32)
     S = S0
@@ -103,7 +133,7 @@ def rg_closure(B, rule, n_levels, seed=0):
         if k == n_levels - 1 or S.shape[1] < 4:
             break
         Str = S[:int(FRAC * len(S))]                      # pairing from the training part only
-        J = infer_J(Str, k) if rule.startswith("inference") else None
+        J = infer_J_est(Str, k, estimator) if rule.startswith("inference") else None
         p = pairs5(rule, Str, J, rng)
         S = 0.5 * (S[:, p[:, 0]] + S[:, p[:, 1]])
         M = M[:, p[:, 0]] + M[:, p[:, 1]]

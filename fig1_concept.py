@@ -1,163 +1,180 @@
 """
-Figure 1 of the Nat Comm manuscript: the method and the idea.
+Figure 1 of the manuscript: the idea and the distilled result.
 
- (a) One step of inference-based RG on the sequence network of Fig. 3 (N = 512):
-     activity -> inferred couplings J -> similarity of input/output synaptic vectors
-     -> pairs averaged into block units -> couplings re-inferred on the blocks.
- (b) Why it matters: two sub-populations that fire together but project to different
-     targets are merged by correlation-based grouping and kept apart by grouping on
-     inferred couplings (same cartoon as the cover-letter figure).
-(No data needed: both panels are schematic.)
-Output: Figures/Fig1_concept.png / .pdf.  Run from the folder holding sim_cache/.
+ (a) The two grouping rules in the same visual language.  Same network: two populations
+     A and B driven by the same source (they fire together) that project to different
+     targets.  Row 1, group by correlation: the equal-time similarity cannot tell A from
+     B, they are merged into one block and the reduced network loses the direction of
+     the flow.  Row 2, group by inferred in/out couplings: the similarity of the rows and
+     columns of J separates A from B, each becomes a block and the flow is kept.
+ (b) The result in one plot: advantage of the inference-based reduction over the
+     correlation-based one (closure, output similarity) against the directedness of the
+     recording at the model's timescale, for the cultures and for every in-vivo
+     recording and condition (results/closure.npz, directedness.npz, allen_final/, hc11/).
+Output: Figures/Fig1_concept.png / .pdf.  Run from the folder holding results/.
 """
 
+import glob
 import os
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch
 
-from cover_figure import panel_idea
-
-
-def big_arrow(fig, x0, x1, y, text=""):
-    fig.patches.append(FancyArrowPatch((x0, y), (x1, y), transform=fig.transFigure, arrowstyle="-|>",
-                                       mutation_scale=11, lw=1.3, color="0.45", capstyle="round"))
-    if text:
-        fig.text((x0 + x1) / 2, y + 0.06, text, ha="center", fontsize=7.5, color="0.35")
+CORAL, TEAL, ORANGE, GREY, INK = "#e8707e", "#2a9d8f", "#f6c177", "#c4c4c4", "0.25"
+RED, OLIVE = "#d62728", "#8c8c00"
+CARD_OLIVE, CARD_RED = "#f4f4e4", "#fbeeee"
+plt.rcParams.update({"font.family": ["Helvetica Neue", "Helvetica", "Arial", "DejaVu Sans"]})
 
 
-def stage(ax, img, title, xlabel="", ylabel="", **kw):
-    """One stage of the RG step: image on a soft rounded card, no frame."""
-    ax.imshow(img, **kw)
-    ax.set_xticks([]); ax.set_yticks([])
-    for sp in ax.spines.values():
-        sp.set_visible(False)
-    ax.set_title(title, fontsize=8.5, color="0.2", pad=6)
-    if xlabel:
-        ax.set_xlabel(xlabel, fontsize=7.5, color="0.4", labelpad=2)
-    if ylabel:
-        ax.set_ylabel(ylabel, fontsize=7.5, color="0.4", labelpad=2)
-    bb = ax.get_position()
-    pad = 0.012
-    ax.figure.patches.append(FancyBboxPatch((bb.x0 - pad, bb.y0 - pad - 0.03), bb.width + 2 * pad, bb.height + 2 * pad + 0.06,
-                                            boxstyle="round,pad=0.01,rounding_size=0.015", transform=ax.figure.transFigure,
-                                            fc="0.96", ec="none", zorder=-1))
+def node(ax, xy, color, r=0.34, ring=None):
+    ax.add_patch(Circle((xy[0] + 0.05, xy[1] - 0.05), r, fc="0.80", ec="none", zorder=2, alpha=0.55))
+    ax.add_patch(Circle(xy, r, fc=color, ec=ring or "white", lw=2.0 if ring else 1.2, zorder=3))
 
 
-
-CORAL, TEAL, GREY, INK = "#e8707e", "#2a9d8f", "#c4c4c4", "0.25"
-
-
-def snode(ax, xy, color, r=0.32, z=3):
-    ax.add_patch(plt.Circle((xy[0] + 0.05, xy[1] - 0.05), r, fc="0.80", ec="none", zorder=z - 1, alpha=0.55))
-    ax.add_patch(plt.Circle(xy, r, fc=color, ec="white", lw=1.2, zorder=z))
+def edge(ax, a, b, color, lw=1.1, rad=0.1, alpha=0.85, r=0.34):
+    ax.add_patch(FancyArrowPatch(a, b, arrowstyle="-|>", mutation_scale=9, lw=lw, color=color, alpha=alpha,
+                                 connectionstyle=f"arc3,rad={rad}", shrinkA=r * 13, shrinkB=r * 13, zorder=2, capstyle="round"))
 
 
-def sedge(ax, a, b, color, lw=1.0, rad=0.15, alpha=0.55, arrow=False, r=0.32):
-    ax.add_patch(FancyArrowPatch(a, b, arrowstyle="-|>" if arrow else "-", mutation_scale=9, lw=lw, color=color, alpha=alpha,
-                                 connectionstyle=f"arc3,rad={rad}", shrinkA=r * 14, shrinkB=r * 14, zorder=2, capstyle="round"))
+def matrix(ax, x0, y0, cells, cell=0.55, labels=None):
+    n = len(cells)
+    for i in range(n):
+        for j in range(n):
+            ax.add_patch(FancyBboxPatch((x0 + j * cell + 0.04, y0 + (n - 1 - i) * cell + 0.04), cell - 0.08, cell - 0.08,
+                                        boxstyle="round,pad=0.0,rounding_size=0.07", fc=cells[i][j], ec="none", zorder=2))
+    if labels:
+        for k, (lab, col) in enumerate(labels):
+            ax.text(x0 - 0.25, y0 + (n - 0.5 - k) * cell, lab, ha="right", va="center", fontsize=6.5, color=col)
+            ax.text(x0 + (k + 0.5) * cell, y0 - 0.25, lab, ha="center", va="top", fontsize=6.5, color=col)
 
 
-def panel_scheme(ax):
-    """Panel a as a schematic: network -> inferred couplings and similarity -> coarse-grained network."""
-    ax.set_xlim(0, 30); ax.set_ylim(0, 10.5); ax.set_aspect("equal"); ax.axis("off")
-    # ---- stage 1: the network
-    A = [(2.0, 7.2), (3.0, 8.1), (3.7, 6.9), (2.3, 6.0), (4.0, 7.9)]
-    B = [(2.2, 3.2), (3.2, 2.4), (3.8, 3.6), (2.6, 4.3), (1.6, 2.5)]
-    G = [(5.6, 8.7), (6.7, 7.0), (5.3, 5.3), (7.5, 5.5), (6.3, 3.0), (7.7, 2.2), (8.3, 7.9), (8.5, 3.9)]
-    for grp, col in [(A, CORAL), (B, TEAL)]:
-        for i, j in [(0, 1), (1, 4), (2, 3), (0, 3)]:
-            sedge(ax, grp[i], grp[j], col, lw=0.8, rad=0.2, alpha=0.3)
-    for a, b in [(0, 1), (2, 3), (4, 5), (3, 6), (2, 4), (1, 3), (6, 7), (3, 7)]:
-        sedge(ax, G[a], G[b], GREY, lw=0.9, rad=0.15, alpha=0.8)
-    for dst in A:
-        sedge(ax, G[2], dst, GREY, lw=0.9, rad=0.1, alpha=0.8, arrow=True)
-    for dst in B:
-        sedge(ax, G[4], dst, GREY, lw=0.9, rad=0.1, alpha=0.8, arrow=True)
-    for src in A:
-        for dst in (G[1], G[6]):
-            sedge(ax, src, dst, CORAL, lw=1.0, rad=0.1, alpha=0.7, arrow=True)
-    for src in B:
-        for dst in (G[5], G[7]):
-            sedge(ax, src, dst, TEAL, lw=1.0, rad=0.1, alpha=0.7, arrow=True)
-    for xy in G:
-        snode(ax, xy, GREY)
+def row(ax, rule):
+    """One row of panel a: network -> similarity -> coarse-grained network."""
+    ax.set_xlim(0, 30); ax.set_ylim(0, 8.6); ax.set_aspect("equal"); ax.axis("off")
+    corr = rule == "correlation"
+    col, card, title = (OLIVE, CARD_OLIVE, "group by correlation") if corr else (RED, CARD_RED, "group by inferred in/out couplings")
+    ax.add_patch(FancyBboxPatch((0.3, 0.3), 29.4, 8.0, boxstyle="round,pad=0.1,rounding_size=0.5", fc=card, ec="none", zorder=0))
+    ax.text(0.9, 8.0, title, fontsize=9, color=col, weight="bold", va="top")
+    # ---- the network (identical in both rows)
+    src = (2.2, 4.2)
+    A = [(5.0, 5.9), (5.0, 4.9)]
+    B = [(5.0, 3.5), (5.0, 2.5)]
+    TA = [(8.2, 6.2), (8.2, 5.1)]
+    TB = [(8.2, 3.3), (8.2, 2.2)]
+    for xy in A + B:
+        edge(ax, src, xy, GREY, rad=0.05)
+    for a in A:
+        for t in TA:
+            edge(ax, a, t, CORAL)
+    for b in B:
+        for t in TB:
+            edge(ax, b, t, TEAL)
+    node(ax, src, GREY)
     for xy in A:
-        snode(ax, xy, CORAL)
+        node(ax, xy, CORAL)
     for xy in B:
-        snode(ax, xy, TEAL)
-    ax.text(5.0, 10.0, "network", ha="center", fontsize=9, color=INK, weight="bold")
-    ax.text(5.0, 0.55, "only the activity $S_i(t)$\nis observed", ha="center", va="center", fontsize=7.5, color="0.4", style="italic", linespacing=1.3)
-    # ---- stage 2: inferred couplings and similarity
-    x0, y0, cell = 11.3, 2.6, 0.62
-    import itertools
-    rng = np.random.default_rng(3)
-    for i, j in itertools.product(range(8), range(8)):
-        if i == j:
-            col = "white"
-        elif i < 3 and j < 3:
-            col = CORAL
-        elif 3 <= i < 6 and 3 <= j < 6:
-            col = TEAL
-        elif i < 3 and j >= 6:
-            col = "#f5b8bf"
-        elif 3 <= i < 6 and j >= 6:
-            col = "#9fd3cc"
-        else:
-            col = (0.93, 0.93, 0.93) if rng.random() < 0.6 else (0.86, 0.86, 0.86)
-        ax.add_patch(FancyBboxPatch((x0 + j * cell + 0.05, y0 + (7 - i) * cell + 0.05), cell - 0.1, cell - 0.1,
-                                    boxstyle="round,pad=0.0,rounding_size=0.08", fc=col, ec="none", zorder=2))
-    ax.text(x0 + 4 * cell, y0 + 8 * cell + 0.35, "inferred couplings $J_{ij}$", ha="center", fontsize=9, color=INK, weight="bold")
-    ax.text(x0 - 0.3, y0 + 4 * cell, "post", ha="right", va="center", fontsize=7.5, color="0.4", rotation=90)
-    ax.text(x0 + 4 * cell, y0 - 0.35, "pre", ha="center", va="top", fontsize=7.5, color="0.4")
-    # brackets: rows with the same in/out vectors
-    for (r0, r1, col) in [(0, 3, CORAL), (3, 6, TEAL)]:
-        ax.plot([x0 + 8 * cell + 0.25] * 2, [y0 + (8 - r1) * cell + 0.08, y0 + (8 - r0) * cell - 0.08], color=col, lw=2.2, solid_capstyle="round", zorder=3)
-    ax.text(x0 + 8 * cell + 0.5, y0 + (8 - 1.5) * cell, "same\nin/out", ha="left", va="center", fontsize=7, color=CORAL)
-    ax.text(x0 + 8 * cell + 0.5, y0 + (8 - 4.5) * cell, "same\nin/out", ha="left", va="center", fontsize=7, color=TEAL)
-    ax.text(x0 + 4 * cell + 0.6, 0.55, "same inputs and outputs\n$\\to$ one block (one colour)", ha="center", va="center", fontsize=7.5, color="0.4", style="italic", linespacing=1.3)
-    # ---- stage 3: coarse-grained network
-    bA, bB = (23.0, 7.2), (23.0, 3.2)
-    bG = [(26.3, 7.7), (26.0, 5.1), (26.6, 2.6), (28.6, 6.6), (28.4, 3.7)]
-    for a, b in [(0, 3), (1, 3), (1, 4), (2, 4)]:
-        sedge(ax, bG[a], bG[b], GREY, lw=1.1, rad=0.15, alpha=0.8, r=0.5)
-    for dst in (bA, bB):
-        sedge(ax, bG[1], dst, GREY, lw=1.2, rad=0.1, alpha=0.9, arrow=True, r=0.6)
-    for dst in (bG[0], bG[3]):
-        sedge(ax, bA, dst, CORAL, lw=1.8, rad=0.1, alpha=0.9, arrow=True, r=0.6)
-    for dst in (bG[2], bG[4]):
-        sedge(ax, bB, dst, TEAL, lw=1.8, rad=0.1, alpha=0.9, arrow=True, r=0.6)
-    for xy in bG:
-        snode(ax, xy, GREY, r=0.5)
-    snode(ax, bA, CORAL, r=0.85)
-    snode(ax, bB, TEAL, r=0.85)
-    ax.text(25.5, 10.0, "coarse-grained network", ha="center", fontsize=9, color=INK, weight="bold")
-    ax.text(25.5, 0.55, "blocks keep their\ninputs and outputs", ha="center", va="center", fontsize=7.5, color="0.4", style="italic", linespacing=1.3)
-    # ---- arrows between stages
-    for xa, xb, lab in [(9.2, 10.9, "infer"), (19.0, 20.9, "group")]:
-        ax.add_patch(FancyArrowPatch((xa, 5.4), (xb, 5.4), arrowstyle="-|>", mutation_scale=12, lw=1.4, color="0.45", capstyle="round"))
-        ax.text((xa + xb) / 2, 5.95, lab, ha="center", fontsize=8, color="0.35")
-    ax.annotate("", xy=(5.0, 9.3), xytext=(25.5, 9.3), arrowprops=dict(arrowstyle="-|>", lw=1.0, color="0.6", ls="--",
-                                                                        connectionstyle="arc3,rad=0.12", mutation_scale=10))
-    ax.text(15.3, 9.55, "re-infer and iterate:  $N \\to N/2 \\to N/4 \\to \\dots$", ha="center", va="bottom", fontsize=8, color="0.35",
-            bbox=dict(boxstyle="round,pad=0.35,rounding_size=0.8", fc="0.96", ec="none"))
+        node(ax, xy, TEAL)
+    for xy in TA:
+        node(ax, xy, "white", ring=CORAL)
+    for xy in TB:
+        node(ax, xy, "white", ring=TEAL)
+    ax.text(5.0, 6.75, "A", ha="center", fontsize=8, color=CORAL, weight="bold")
+    ax.text(5.0, 1.55, "B", ha="center", fontsize=8, color=TEAL, weight="bold")
+    ax.text(8.2, 7.1, "targets", ha="center", fontsize=6.5, color="0.45")
+    ax.text(5.2, 0.75, "A and B fire together, project to different targets", ha="center", fontsize=6.8, color="0.4", style="italic")
+    # ---- the similarity used for grouping
+    ax.add_patch(FancyArrowPatch((9.8, 4.3), (11.3, 4.3), arrowstyle="-|>", mutation_scale=11, lw=1.3, color="0.5", capstyle="round"))
+    labs = [("A", CORAL), ("A", CORAL), ("B", TEAL), ("B", TEAL)]
+    x0, y0 = 13.0, 2.6
+    if corr:
+        cells = [[("white" if i == j else ORANGE) for j in range(4)] for i in range(4)]
+        head, sub = "similarity of the activities", "A and B are correlated:\nindistinguishable"
+    else:
+        cells = [[("white" if i == j else (CORAL if (i < 2 and j < 2) else TEAL if (i >= 2 and j >= 2) else "#ececec")) for j in range(4)] for i in range(4)]
+        head, sub = "similarity of in/out couplings", "A and B have different outputs:\ntwo groups"
+    matrix(ax, x0, y0, cells, labels=labs)
+    ax.text(x0 + 1.1, 5.7, head, ha="center", fontsize=7.5, color=INK, weight="bold")
+    ax.text(x0 + 1.1, 1.75, sub, ha="center", va="top", fontsize=6.8, color=col, style="italic", linespacing=1.25)
+    # ---- the coarse-grained network
+    ax.add_patch(FancyArrowPatch((17.3, 4.3), (18.8, 4.3), arrowstyle="-|>", mutation_scale=11, lw=1.3, color="0.5", capstyle="round"))
+    ax.text(18.05, 4.9, "group", ha="center", fontsize=7, color="0.4")
+    src2 = (20.6, 4.2)
+    TA2 = [(26.6, 6.2), (26.6, 5.1)]
+    TB2 = [(26.6, 3.3), (26.6, 2.2)]
+    if corr:
+        blk = (23.4, 4.2)
+        edge(ax, src2, blk, GREY, rad=0.0, r=0.6)
+        for t in TA2 + TB2:
+            edge(ax, blk, t, "0.55", lw=1.3, r=0.6)
+        node(ax, blk, ORANGE, r=0.72)
+        ax.text(23.4, 3.1, "A+B", ha="center", va="top", fontsize=7, color=INK)
+        ax.text(25.0, 0.75, "one block, two targets: direction lost", ha="center", fontsize=6.8, color=col, style="italic")
+    else:
+        bA, bB = (23.4, 5.4), (23.4, 3.0)
+        for blk in (bA, bB):
+            edge(ax, src2, blk, GREY, rad=0.05, r=0.5)
+        for t in TA2:
+            edge(ax, bA, t, CORAL, lw=1.4, r=0.5)
+        for t in TB2:
+            edge(ax, bB, t, TEAL, lw=1.4, r=0.5)
+        node(ax, bA, CORAL, r=0.55)
+        node(ax, bB, TEAL, r=0.55)
+        ax.text(23.4, 6.45, "A", ha="center", fontsize=7, color=CORAL, weight="bold")
+        ax.text(23.4, 1.95, "B", ha="center", va="top", fontsize=7, color=TEAL, weight="bold")
+        ax.text(25.0, 0.75, "two blocks, each with its target: direction kept", ha="center", fontsize=6.8, color=col, style="italic")
+    node(ax, src2, GREY)
+    for xy in TA2:
+        node(ax, xy, "white", ring=CORAL)
+    for xy in TB2:
+        node(ax, xy, "white", ring=TEAL)
+
+
+def panel_result(ax):
+    from scipy.stats import spearmanr
+    cl, dr = np.load("results/closure.npz"), np.load("results/directedness.npz")
+    cults = ["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d15"]
+    xc = [float(dr[f"cultures/{c}/lag1"]) for c in cults]
+    yc = [np.nanmean((cl[f"cultures/{c}/inference_out/closure"] - cl[f"cultures/{c}/correlation/closure"])[1:7]) for c in cults]
+    xv = [float(dr[f"mice/{m}/lag1"]) for m in ["Krebs", "Waksman", "Robbins"]]
+    yv = [np.nanmean((cl[f"mice/{m}/inference_out/closure"] - cl[f"mice/{m}/correlation/closure"])[1:7]) for m in ["Krebs", "Waksman", "Robbins"]]
+    for f in sorted(glob.glob("results/allen_final/*.npz")):
+        r = dict(np.load(f))
+        if "skipped" not in r:
+            xv += [r[k][0] for k in r if k.startswith("top/")]; yv += [r[k][2] for k in r if k.startswith("top/")]
+    for f in sorted(glob.glob("results/hc11/*.npz")):
+        r = dict(np.load(f))
+        xv += [r[k][0] for k in r if k.endswith("/10")]; yv += [r[k][2] for k in r if k.endswith("/10")]
+    xv, yv = np.array(xv), np.array(yv)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+    for sp in ("left", "bottom"):
+        ax.spines[sp].set_color("0.6")
+    ax.tick_params(colors="0.4", labelsize=7)
+    ax.axhline(0, color="0.75", ls=":", lw=1)
+    ax.scatter(xv, yv, s=11, color="#9fb6c9", alpha=0.75, label=f"in vivo: cortex and hippocampus, rest, stimuli, sleep ({len(xv)})", zorder=2)
+    ax.scatter(xc, yc, s=46, color=RED, ec="white", lw=0.8, label="cultured networks (9)", zorder=3)
+    rho = spearmanr(xc, yc)[0]
+    ax.set_xlabel("directedness of the recorded dynamics at the model's timescale", fontsize=7.5, color="0.35")
+    ax.set_ylabel("advantage of inference over correlation\n(closure of the reduced dynamics)", fontsize=7.5, color="0.35")
+    ax.set_xlim(-0.005, 0.26); ax.set_ylim(-0.12, 0.115)
+    ax.legend(frameon=False, fontsize=6.8, loc="upper left")
+    ax.annotate("in vitro: inference pays off\nwhere the dynamics is directional", xy=(0.222, 0.092), xytext=(0.115, 0.062),
+                fontsize=7, color=RED, ha="left", va="center", arrowprops=dict(arrowstyle="-", color=RED, lw=0.8, alpha=0.6))
+    ax.annotate("in vivo: same directedness, no advantage:\nthe interacting units are not recorded", xy=(0.145, -0.035), xytext=(0.125, -0.085),
+                fontsize=7, color="#4a6f8f", ha="left", va="center", arrowprops=dict(arrowstyle="-", color="#4a6f8f", lw=0.8, alpha=0.6))
 
 
 def main():
-    plt.rcParams.update({"font.size": 8, "font.family": ["Helvetica Neue", "Helvetica", "Arial", "DejaVu Sans"]})
-    fig = plt.figure(figsize=(8.8, 5.4))
-    gs = fig.add_gridspec(2, 5, height_ratios=[1, 0.95], width_ratios=[0.7, 1, 1, 1, 0.7],
-                          hspace=0.2, wspace=0.0, left=0.03, right=0.99, top=0.97, bottom=0.03)
-    t = slice(0, 600)
-    panel_scheme(fig.add_subplot(gs[0, :]))
-    fig.text(0.01, 0.96, "a", fontsize=11, weight="bold")
-
-    ax = fig.add_subplot(gs[1, 1:4])
-    panel_idea(ax, fs=0.85)
-    ax.set_title("", loc="left")
-    fig.text(0.01, 0.46, "b", fontsize=11, weight="bold")
+    fig = plt.figure(figsize=(8.8, 7.6))
+    gs = fig.add_gridspec(3, 6, height_ratios=[1, 1, 1.45], hspace=0.08, wspace=0.0, left=0.03, right=0.99, top=0.97, bottom=0.07)
+    row(fig.add_subplot(gs[0, :]), "correlation")
+    row(fig.add_subplot(gs[1, :]), "inference")
+    fig.text(0.01, 0.975, "a", fontsize=11, weight="bold")
+    ax = fig.add_subplot(gs[2, 1:5])
+    panel_result(ax)
+    fig.text(0.01, 0.40, "b", fontsize=11, weight="bold")
     os.makedirs("Figures", exist_ok=True)
     fig.savefig("Figures/Fig1_concept.png", dpi=200)
     fig.savefig("Figures/Fig1_concept.pdf")

@@ -53,6 +53,7 @@ def card(ax, xy, w, h, fc, ec="none", lw=0, r=0.18):
 def panel_idea(ax, fs=1.0):
     ax.set_xlim(0, 10)
     ax.set_ylim(0, 6.2)
+    ax.set_aspect("equal")
     ax.axis("off")
     cA, cB, cP, cQ = "#f6c177", "#f6c177", "#e8707e", "#b3b040"
     # microscopic network (left)

@@ -121,12 +121,13 @@ def plot(res):
     ax = axs[0]
     ax.plot(res["Is_full"], res["full/p3"], "o-", color="k", ms=3, label="P(3)")
     ax.plot(res["Is_full"], res["full/p4"], "s--", color="k", ms=3, label="P(4)")
-    ax.set_title("full network (N = 1024), stimulus on 2a", fontsize=9); ax.legend(frameon=False, fontsize=8)
+    ax.set_title("full network (N = 1024)\nstimulus on the units of 2a", fontsize=9); ax.legend(frameon=False, fontsize=8)
     for ax, rule in zip(axs[1:], RULES):
         for dg, a in ((-0.1, 0.35), (0.0, 1.0), (0.1, 0.35)):
             ax.plot(res["Is"], res[f"{rule}/g{dg:+.1f}/p3"], "o-", color=col[rule], ms=3, alpha=a, label="P(3)" if dg == 0 else None)
             ax.plot(res["Is"], res[f"{rule}/g{dg:+.1f}/p4"], "s--", color=col[rule], ms=3, alpha=a, label="P(4)" if dg == 0 else None)
-        ax.set_title(f"{rule} (64 blocks), 2a/2b separation {res[f'{rule}/sep']:.2f}, gain {res[f'{rule}/gain']:.2f} (+/- 0.1 faint)", fontsize=8)
+        ax.set_title(f"{rule.replace('inference_out', 'inference (output)').replace('inference', 'inference (in+out)') if rule != 'inference_out' else 'inference (output)'} (64 blocks)\n"
+                     f"2a/2b separation {float(res[f'{rule}/sep']):.2f}, gain {float(res[f'{rule}/gain']):.2f} (faint: +/- 0.1)", fontsize=8)
         ax.legend(frameon=False, fontsize=8)
     for ax in axs:
         ax.set_xlabel("stimulus on 2a, I (units of the model's field)"); ax.axhline(0.5, color="0.7", ls=":")
@@ -138,4 +139,7 @@ def plot(res):
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1 and sys.argv[1] == "plot":
+        plot(dict(np.load("results/fig3_fair.npz")))
+    else:
+        main()

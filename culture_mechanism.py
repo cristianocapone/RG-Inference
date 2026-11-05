@@ -175,10 +175,10 @@ def plot(store):
         ax.errorbar(steps, np.nanmean(v, 0), np.nanstd(v, 0) / 3, fmt="o-", color=COL[r], ms=3, capsize=2, label=LAB[r])
     ax.axhline(1, color="0.6", ls=":"); ax.set_xlabel("RG step"); ax.set_ylabel("closure"); ax.set_title("(b) closure, incl. spatial rule (9 cultures)", fontsize=9, loc="left")
     ax = axs[2]
-    for q, mk, lab in [("closure_burst", "o", "inside bursts"), ("closure_quiet", "s", "outside bursts"), ("closure", "x", "all transitions")]:
+    for q, mk, lab in [("closure_burst", "o", "inside bursts"), ("closure", "x", "all transitions")]:
         a = [np.nanmean((store[f"{c}/inference_out/{q}"] - store[f"{c}/correlation/{q}"])[1:7]) for c in CULT]
-        ax.scatter(x, a, marker=mk, s=30, label=lab, color={"o": "#8b0000", "s": "#2a9d8f", "x": "0.3"}[mk])
-    ax.axhline(0, color="0.6", ls=":"); ax.set_xlabel("lag-1 directedness"); ax.set_ylabel("advantage of the output rule over correlation"); ax.set_title("(c) bursts vs quiet periods", fontsize=9, loc="left"); ax.legend(frameon=False, fontsize=7)
+        ax.scatter(x, a, marker=mk, s=30, label=lab, color={"o": "#8b0000", "x": "0.3"}[mk])
+    ax.axhline(0, color="0.6", ls=":"); ax.set_xlabel("lag-1 directedness"); ax.set_ylabel("advantage of the output rule over correlation"); ax.set_title("(c) inside network bursts", fontsize=9, loc="left"); ax.legend(frameon=False, fontsize=7)
     ax = axs[3]
     for q, mk, lab in [("closure", "x", "original"), ("closure_resid", "o", "global mode removed")]:
         a = [np.nanmean((store[f"{c}/inference_out/{q}"] - store[f"{c}/correlation/{q}"])[1:7]) for c in CULT]

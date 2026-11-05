@@ -6,9 +6,9 @@ directional" — six panels built from the saved results of the analysis scripts
      the recording (9 cultures + 3 mice)            [directionality_data.py, closure.npz]
  (b) cultures: closure along the RG for the pairing rules  [closure.npz]
  (c) spiking E/I networks with ground truth: closure at 32 blocks vs directedness,
-     incl. PCA                                       [dir_sweep_spiking.npz]
+     5 networks per chain strength (mean +/- s.d.)   [results/dir_sweep_rep/]
  (d) spiking: perturbation transfer of the reduced models vs directedness, with the
-     micro-model reference and the split-half ceiling [dir_sweep_spiking.npz]
+     micro-model reference and the split-half ceiling [results/dir_sweep_rep/]
  (e) iterative vs one-shot: closure at strong reductions, cultures and spiking
      (recomputed here and cached in results/iter_deep.npz)
  (f) specific held-out predictability of the coarse-grained dynamics, cultures and
@@ -84,6 +84,20 @@ def iter_deep(path="results/iter_deep.npz"):
     return out
 
 
+def rep_sweep(path="results/dir_sweep_rep", delay=5.0):
+    """Replicated sweep (dir_sweep_replicated.py): per chain, one value per network (subsets averaged)."""
+    import glob
+    out = {}
+    for c in CHAINS:
+        rows = [dict(np.load(f)) for f in sorted(glob.glob(f"{path}/chain{c:g}_net*_d{delay:g}.npz"))]
+        rows = [r for r in rows if "done" in r]
+        for key in ["dir1", "micro/pert"] + [f"{r}/{q}" for r in ["inference", "inference_out", "lagged_out", "correlation", "random"] for q in ["closure3", "closure4", "pert"]]:
+            out[f"{c}/{key}"] = np.array([np.mean([r[f"sub{i}/{key}"] for i in range(3)]) for r in rows])
+        for key in ["R_asym", "ceiling"]:
+            out[f"{c}/{key}"] = np.array([float(r[key]) for r in rows])
+    return out
+
+
 def main():
     cl = np.load("results/closure.npz")
     cm = {"cultures": np.load("results/cultures_metrics.npz"), "mice": np.load("results/stringer_metrics.npz")}
@@ -129,34 +143,34 @@ def main():
     ax.set_title("(b) cultures, n = 9", fontsize=10, loc="left")
     ax.legend(frameon=False, fontsize=7)
 
-    # ---------------- (c) spiking: closure vs directedness ----------------
+    # ---------------- (c) spiking: closure vs directedness (5 networks per chain) ----------------
     ax = axs[0, 2]
-    dirx = np.array([sw[f"{c}/R_asym"] for c in CHAINS])
-    for rule in ["inference", "inference_out", "oneshot", "lagged_out", "correlation", "random"]:
-        A = np.stack([sw[f"{c}/{rule}/closure4"] for c in CHAINS])
-        ax.errorbar(dirx, A.mean(1), A.std(1), fmt="o-", color=COL[rule], ms=3, capsize=2, label=LAB[rule])
-    ax.plot(dirx, [sw[f"{c}/pca/closure4"] for c in CHAINS], "o-", color=COL["pca"], ms=3, label=LAB["pca"])
+    rep = rep_sweep()
+    dirx = np.array([rep[f"{c}/R_asym"].mean() for c in CHAINS])
+    for rule in ["inference", "inference_out", "lagged_out", "correlation", "random"]:
+        A = np.stack([rep[f"{c}/{rule}/closure4"] for c in CHAINS])        # chains x networks
+        ax.errorbar(dirx, A.mean(1), A.std(1, ddof=1), fmt="o-", color=COL[rule], ms=3, capsize=2, label=LAB[rule])
     for c, x in zip(CHAINS, dirx):
-        ax.annotate(f"lag-1 dir. {float(sw[f'{c}/dir1']):.3f}", (x, 0.885), fontsize=6.5, ha="center", color="0.3")
+        ax.annotate(f"lag-1 dir. {rep[f'{c}/dir1'].mean():.3f}", (x, 0.865), fontsize=6.5, ha="center", color="0.3")
     ax.axhline(1, color="0.6", ls=":")
     ax.set_xlabel("directedness of the propagation\n(asymmetry of the response to stimulation; chain 0 to 0.2)")
     ax.set_ylabel("closure at 32 blocks")
-    ax.set_title("(c) spiking E/I networks, ground truth", fontsize=10, loc="left")
-    ax.legend(frameon=False, fontsize=7)
+    ax.set_title("(c) spiking E/I networks, ground truth (5 networks per chain)", fontsize=10, loc="left")
+    ax.legend(frameon=False, fontsize=7, loc="center right")
 
     # ---------------- (d) spiking: perturbation transfer ----------------
     ax = axs[1, 0]
-    for rule in ["inference", "inference_out", "oneshot", "lagged_out", "correlation", "random"]:
-        A = np.stack([sw[f"{c}/{rule}/pert"] for c in CHAINS])
-        ax.errorbar(dirx, A.mean(1), A.std(1), fmt="o-", color=COL[rule], ms=3, capsize=2, label=LAB[rule])
-    A = np.stack([sw[f"{c}/micro/pert"] for c in CHAINS])
-    ax.errorbar(dirx, A.mean(1), A.std(1), fmt="k--", capsize=2, label="micro model (no reduction)")
-    ax.plot(dirx, [sw[f"{c}/ceiling"] for c in CHAINS], "k:", label="split-half ceiling")
+    for rule in ["inference", "inference_out", "lagged_out", "correlation", "random"]:
+        A = np.stack([rep[f"{c}/{rule}/pert"] for c in CHAINS])
+        ax.errorbar(dirx, A.mean(1), A.std(1, ddof=1), fmt="o-", color=COL[rule], ms=3, capsize=2, label=LAB[rule])
+    A = np.stack([rep[f"{c}/micro/pert"] for c in CHAINS])
+    ax.errorbar(dirx, A.mean(1), A.std(1, ddof=1), fmt="k--", capsize=2, label="micro model (no reduction)")
+    ax.plot(dirx, [rep[f"{c}/ceiling"].mean() for c in CHAINS], "k:", label="split-half ceiling")
     ax.axhline(0, color="0.6", ls=":")
     ax.set_xlabel("directedness of the network")
     ax.set_ylabel("perturbation transfer, 64 blocks\ncorr(R_model, R_full), off-diagonal")
-    ax.set_title("(d) response to stimulation of the reduced model", fontsize=10, loc="left")
-    ax.legend(frameon=False, fontsize=7)
+    ax.set_title("(d) response to stimulation, mean +/- s.d. over networks", fontsize=10, loc="left")
+    ax.legend(frameon=False, fontsize=6.5, ncol=2, loc="center")
 
     # ---------------- (e) iterative vs one-shot at strong reductions ----------------
     ax = axs[1, 1]

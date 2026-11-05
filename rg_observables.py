@@ -136,15 +136,16 @@ def plot(store):
                 axs[row, j].set_xscale("log", base=2); axs[row, j].set_yscale("log")
                 axs[row, j].set_xlabel("block size K"); axs[row, j].set_ylabel(ylab)
             ax = axs[row, 3]
-            for k in range(6):
+            for k, ls in [(0, ":"), (2, "--"), (4, "-")]:
                 s = store[f"{grp}/{names[0]}/{rule}/spec{k}"]
                 s = s[s > 0]
-                ax.plot(np.arange(1, len(s) + 1) / len(s), s / s[0], "-", color=COL[rule], lw=0.8, alpha=0.4 + 0.1 * k)
+                ax.plot(np.arange(1, len(s) + 1) / len(s), s / s[0], ls, color=COL[rule], lw=1.1, label=f"K = {2 ** k}" if rule == "correlation" else None)
+            ax.legend(frameon=False, fontsize=7)
             ax.set_xscale("log"); ax.set_yscale("log"); ax.set_xlabel("rank / number of blocks"); ax.set_ylabel("eigenvalue / largest")
         axs[row, 0].set_title(f"{grp}: variance scaling", fontsize=9, loc="left")
         axs[row, 1].set_title("silence", fontsize=9, loc="left")
         axs[row, 2].set_title("dynamics", fontsize=9, loc="left")
-        axs[row, 3].set_title(f"covariance spectrum along the RG ({names[0]})", fontsize=9, loc="left")
+        axs[row, 3].set_title(f"covariance spectrum of the blocks ({names[0]}; K = 1, 4, 16)", fontsize=9, loc="left")
     axs[0, 0].legend(frameon=False, fontsize=7)
     fig.tight_layout()
     os.makedirs("Figures", exist_ok=True)

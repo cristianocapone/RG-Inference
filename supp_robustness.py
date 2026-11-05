@@ -58,10 +58,10 @@ def main():
     lo = np.load("results/invivo_local.npz")
     for prefix, mk, lab in [("10ms/", "o", "single probe"), ("10ms/", "s", "pooled 512")]:
         ks = [k for k in lo.files if k.startswith(prefix) and (("probe" in k) == (lab == "single probe"))]
-        ax.scatter([lo[k][0] for k in ks], [lo[k][2] for k in ks], marker=mk, s=25 if mk == "o" else 45,
+        ax.scatter([lo[k][4] for k in ks], [lo[k][2] for k in ks], marker=mk, s=25 if mk == "o" else 45,
                    color="0.3" if mk == "o" else "#1f77b4", label=lab)
     ax.axhline(0, color="0.4", lw=0.8)
-    ax.set_xlabel("directedness, 1 $-$ symmetry of $D(1)$")
+    ax.set_xlabel("directedness at lag 1 (noise-corrected)")
     ax.set_ylabel("closure advantage (output) $-$ correlation")
     ax.legend(fontsize=7, frameon=False)
     ax.set_title("(d) mice: single probes", fontsize=10, loc="left")

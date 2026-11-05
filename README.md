@@ -79,6 +79,10 @@ Tested with Python 3.12, numpy 2.4, scipy 1.17, matplotlib, scikit-learn 1.9.
 | Suppl.: in vivo single probes | `invivo_local.py` |
 | Suppl.: perturbation transfer | `perturbation_transfer.py` (args: trials, amplitude, network) |
 | Suppl.: pairing variants, nMF vs ML | `pairing_tests.py` |
+| Fig. 4c,d: replicated spiking sweep (5 networks per chain, 3 subsets) | `dir_sweep_replicated.py <seed> [delay_ms] [chains]`; `summary` aggregates `results/dir_sweep_rep/` |
+| Suppl.: stimulation of 2a alone, full-network reference | `fig3_fair.py` (`plot` re-draws from `results/fig3_fair.npz`) |
+| Suppl.: advantage per RG step, LOO/permutation, 5-fold CV, Allen unit count | `a2_stats.py` (reads `results/closure_cv.npz` from `closure_cv.py`) |
+| Suppl.: in vivo at 2/5/10 ms, nMF vs ridge vs ML couplings | `invivo_binsize.py stringer|cache|allen|summary` (Allen spike times cached in `data/allen_cache/`) |
 
 **Exploratory analyses with negative or inconclusive results.** They are kept for completeness and are not used in the paper.
 - `invivo_areas.py`, `invivo_thalamus.py`: inter-area grouping and thalamo-cortical directionality in the mice. Not significant against shifted surrogates.
@@ -86,6 +90,7 @@ Tested with Python 3.12, numpy 2.4, scipy 1.17, matplotlib, scikit-learn 1.9.
 - `dandi_closure.py`: DANDI 002020 MaxOne cultures. At 10 ms the one-step predictability is about zero (sparse activity, slow drifts), so closure is undefined; not used.
 - `directionality_sweep_hopfield.py`: directedness sweep on the Hopfield network. The closure saturates for every structured rule, so the sweep does not discriminate between them.
 - `directional_sequence_spiking.py`, `directional_metrics_spiking.py`: free-running reduced models of the spiking networks (sequence of cluster activations) and lag-1 metrics sensitive to directional structure (specific predictability, multi-step closure) along the chain sweep. The sequence test depends strongly on how the reduced model's gain is set (tuned: inference best only at the strongest chain, not monotone; as fitted: no reduced model reproduces the sequence); the lag-1 metrics do not grow with the chain. Not used in the paper; the directional metric in the simulations is the response to stimulation (Fig. 4d).
+- `dir_sweep_replicated.py <seed> 10`: synaptic delay equal to the bin (10 ms). Does not raise the lag-1 directedness of the chain networks (0.04-0.05 at chain 0 and 0.2); the full-network response becomes unreliable at chain 0 (split-half 0.21).
 - `kernel_closure_spiking.py`: kinetic Ising model with an exponential presynaptic kernel (30, 100, 300 ms) on the chain networks, couplings by mean-field inversion of the filtered statistics, closure evaluated with the same kernel. The advantage of inference over correlation does not grow with the chain for any kernel, and the closure ratio becomes ill-conditioned at long kernels (values above 1); the model-free lagged rule does as well or better. Negative, not used in the paper.
 
 ## Conventions

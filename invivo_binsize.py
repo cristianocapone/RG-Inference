@@ -13,9 +13,10 @@ binned at any dt), spontaneous and natural movie three, 256 most active units, s
 duration as in allen_final.py.  Rules: inference (in+out), inference (output),
 lagged-correlation (output), correlation; groupings on the first 80% of the recording,
 closure on the last 20% (closure_test.py).
-Results: results/invivo_binsize.npz with keys
+Results: results/invivo_binsize_<group>.npz with keys
   <grp>/<name>[/<cond>]/dt<ms>/dir                      [directedness lag 1, raw, T, N, rate Hz]
   <grp>/<name>[/<cond>]/dt<ms>/<est>/<rule>/{closure,r2_coarse,r2_micro}   est in none, nmf, ridge, ml
+(one file per group: results/invivo_binsize_mice.npz, results/invivo_binsize_allen.npz)
 
 Run from the folder holding data/ and results/:
     python invivo_binsize.py stringer            # 3 mice, 2/5/10 ms, all estimators
@@ -39,7 +40,7 @@ RULES_EST = ["inference", "inference_out"]
 RULES_FREE = ["lagged_out", "correlation"]
 N_UNITS = 256
 N_CACHE = 512
-OUT = "results/invivo_binsize.npz"
+OUT = "results/invivo_binsize.npz"          # set per group in main(): one file per job, no concurrent writers
 CACHE = "data/allen_cache"
 ALLEN_CONDS = ["spontaneous", "natural_movie_three"]
 ML_DTS_ALLEN = (0.005, 0.010)
@@ -78,6 +79,14 @@ def evaluate(B, dt, prefix, store, ests):
 
 def load_store():
     return dict(np.load(OUT)) if os.path.exists(OUT) else {}
+
+
+def load_all_stores():
+    """Union of the per-group result files (mice, allen) for the summary and the figures."""
+    out = {}
+    for f in sorted(glob.glob("results/invivo_binsize*.npz")):
+        out.update(dict(np.load(f)))
+    return out
 
 
 def run_stringer():
@@ -149,7 +158,7 @@ def run_allen():
 
 def summary():
     from scipy.stats import wilcoxon
-    store = load_store()
+    store = load_all_stores()
     recs = sorted({k.rsplit("/dt", 1)[0] for k in store if "/dir" in k})
     for grp in ["mice", "allen"]:
         rr = [r for r in recs if r.startswith(grp)]
@@ -175,6 +184,10 @@ def summary():
 if __name__ == "__main__":
     os.makedirs("results", exist_ok=True)
     what = sys.argv[1] if len(sys.argv) > 1 else "summary"
+    if what in ("stringer", "test"):
+        OUT = "results/invivo_binsize_mice.npz"
+    elif what == "allen":
+        OUT = "results/invivo_binsize_allen.npz"
     if what == "stringer":
         run_stringer()
     elif what == "cache":

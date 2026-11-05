@@ -1,6 +1,6 @@
-# Inferred couplings, not correlations, preserve directional neural dynamics under coarse-graining
+# Coarse-graining neural dynamics: when correlations suffice and when inferred couplings are needed
 
-Code for the paper *Inference drives Renormalization Group in Neural Networks with temporal dynamics* (Capone, Mancini, Gigante, Del Giudice).
+Code for the paper *Coarse-graining neural dynamics: when correlations suffice and when inferred couplings are needed* (Capone, Mancini, Gigante, Del Giudice).
 
 The method coarse-grains a recorded network by inferring a kinetic Ising model, pairing the units whose inferred input and output couplings are most similar, and averaging each pair into a block neuron. It then re-infers the model on the block variables and iterates. Pairing units with the same inputs and outputs is the condition under which the merged variable is an exact reduction of the dynamics (lumpability). The scripts compare this rule with:
 

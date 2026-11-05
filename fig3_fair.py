@@ -31,8 +31,10 @@ from ml_kinetic_ising import fit_kinetic_ising
 from repro_figures_v2 import synaptic_similarity, greedy_pairs
 
 RULES = ["correlation", "inference", "inference_out"]
-IS = np.linspace(0, 12.0, 13)
+IS = np.linspace(0, 12.0, 25)          # field on the blocks (level 4)
+IS_FULL = np.linspace(0, 1.6, 17)      # field on the units of 2a in the full network (scale of beta J S)
 T_STIM = 20000
+MIN_CYCLES = 20
 
 
 def similarity(J, rule):
@@ -63,24 +65,30 @@ def rg_ml(S0, lab, rule, rng):
 
 
 def p34(S, comp):
+    """P(3), P(4) over the cycles of the run; undefined when the stimulus stalls the cycle."""
     c = F.cycles(F.overlaps(S, comp))
-    return (c[:, 1].mean(), c[:, 2].mean(), len(c)) if len(c) else (np.nan, np.nan, 0)
+    return (c[:, 1].mean(), c[:, 2].mean(), len(c)) if len(c) >= MIN_CYCLES else (np.nan, np.nan, len(c))
+
+
+def best_sep(p3, p4):
+    d = np.asarray(p3) - np.asarray(p4)
+    return np.nanmax(d) if np.any(~np.isnan(d)) else np.nan
 
 
 def main():
     J, xi, lab = F.seq_network()
     S0 = np.load(CACHE)
     comp0 = np.eye(7)[lab]
-    res = {"Is": IS}
+    res = {"Is": IS, "Is_full": IS_FULL}
     # ---- reference: the full network stimulated on 2a
     t0 = time.time()
     p3, p4 = [], []
-    for I in IS:
+    for I in IS_FULL:
         Sg = F.glauber(J, np.full(F.N, F.H_EXT / F.BETA), F.BETA, T_STIM, np.random.default_rng(3), S0=xi[1], I=I * (lab == 1))
         a, b, n = p34(Sg, comp0)
         p3.append(a); p4.append(b)
     res["full/p3"], res["full/p4"] = np.array(p3), np.array(p4)
-    print(f"full network: P(3) {np.round(p3, 2)}\n              P(4) {np.round(p4, 2)}  [{time.time() - t0:.0f} s]", flush=True)
+    print(f"full network: P(3) {np.round(p3, 2)}\n              P(4) {np.round(p4, 2)}\n              max P(3)-P(4) {best_sep(p3, p4):.2f}  [{time.time() - t0:.0f} s]", flush=True)
     # ---- reduced models
     for rule in RULES:
         t0 = time.time()
@@ -100,7 +108,7 @@ def main():
                 a, b, n = p34(Sg, comp)
                 p3.append(a); p4.append(b)
             res[f"{rule}/g{dg:+.1f}/p3"], res[f"{rule}/g{dg:+.1f}/p4"] = np.array(p3), np.array(p4)
-            print(f"  gain {g + dg:.2f}: P(3) {np.round(p3, 2)}\n             P(4) {np.round(p4, 2)}", flush=True)
+            print(f"  gain {g + dg:.2f}: P(3) {np.round(p3, 2)}\n             P(4) {np.round(p4, 2)}\n             max P(3)-P(4) {best_sep(p3, p4):.2f}", flush=True)
         print(f"  [{time.time() - t0:.0f} s]", flush=True)
     os.makedirs("results", exist_ok=True)
     np.savez("results/fig3_fair.npz", **res)
@@ -111,8 +119,8 @@ def plot(res):
     fig, axs = plt.subplots(1, 4, figsize=(15, 3.6), sharey=True)
     col = {"full": "k", "correlation": "#8c8c00", "inference": "#d62728", "inference_out": "#8b0000"}
     ax = axs[0]
-    ax.plot(res["Is"], res["full/p3"], "o-", color="k", ms=3, label="P(3)")
-    ax.plot(res["Is"], res["full/p4"], "s--", color="k", ms=3, label="P(4)")
+    ax.plot(res["Is_full"], res["full/p3"], "o-", color="k", ms=3, label="P(3)")
+    ax.plot(res["Is_full"], res["full/p4"], "s--", color="k", ms=3, label="P(4)")
     ax.set_title("full network (N = 1024), stimulus on 2a", fontsize=9); ax.legend(frameon=False, fontsize=8)
     for ax, rule in zip(axs[1:], RULES):
         for dg, a in ((-0.1, 0.35), (0.0, 1.0), (0.1, 0.35)):
@@ -121,7 +129,7 @@ def plot(res):
         ax.set_title(f"{rule} (64 blocks), 2a/2b separation {res[f'{rule}/sep']:.2f}, gain {res[f'{rule}/gain']:.2f} (+/- 0.1 faint)", fontsize=8)
         ax.legend(frameon=False, fontsize=8)
     for ax in axs:
-        ax.set_xlabel("stimulus on 2a, I"); ax.axhline(0.5, color="0.7", ls=":")
+        ax.set_xlabel("stimulus on 2a, I (units of the model's field)"); ax.axhline(0.5, color="0.7", ls=":")
     axs[0].set_ylabel("probability that the cycle continues with 3 / 4")
     fig.tight_layout()
     os.makedirs("Figures", exist_ok=True)

@@ -170,7 +170,8 @@ def main():
     ax.set_xlabel("directedness of the network")
     ax.set_ylabel("perturbation transfer, 64 blocks\ncorr(R_model, R_full), off-diagonal")
     ax.set_title("(d) response to stimulation, mean +/- s.d. over networks", fontsize=10, loc="left")
-    ax.legend(frameon=False, fontsize=6.5, ncol=2, loc="center")
+    ax.set_ylim(-0.08, 1.32)
+    ax.legend(frameon=False, fontsize=6.5, ncol=3, loc="upper center")
 
     # ---------------- (e) iterative vs one-shot at strong reductions ----------------
     ax = axs[1, 1]

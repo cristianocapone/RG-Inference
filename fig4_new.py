@@ -128,7 +128,8 @@ def main():
     ax.axhline(0, color="0.6", ls=":")
     ax.set_xlabel("directedness of the recording at lag 1 (noise-corrected)")
     ax.set_ylabel("closure advantage\ninference-RG - correlation-RG")
-    ax.set_title(f"(a) data: rho = {rho:.2f} (p = {p:.3f}), in+out rho = {rho2:.2f} (p = {p2:.3f})", fontsize=10, loc="left")
+    ax.set_title("(a) cultures and mice", fontsize=10, loc="left")
+    print(f"Fig. 4a: output rho = {rho:.2f} (p = {p:.3f}), in+out rho = {rho2:.2f} (p = {p2:.3f})")
     ax.legend(frameon=False, fontsize=7, loc="upper left")
 
     # ---------------- (b) cultures: closure along RG ----------------
@@ -155,7 +156,7 @@ def main():
     ax.axhline(1, color="0.6", ls=":")
     ax.set_xlabel("directedness of the propagation\n(asymmetry of the response to stimulation; chain 0 to 0.2)")
     ax.set_ylabel("closure at 32 blocks")
-    ax.set_title("(c) spiking E/I networks, ground truth (5 networks per chain)", fontsize=10, loc="left")
+    ax.set_title("(c) spiking E/I networks, 5 per chain strength", fontsize=10, loc="left")
     ax.legend(frameon=False, fontsize=7, loc="center right")
 
     # ---------------- (d) spiking: perturbation transfer ----------------
@@ -199,7 +200,7 @@ def main():
     ax.axhline(0, color="0.6", ls=":")
     ax.set_xlabel("RG step")
     ax.set_ylabel("specific predictability  R2 - R2(auto + global)")
-    ax.set_title("(f) coarse-grained dynamics: cultures (solid), mice (dashed)", fontsize=10, loc="left")
+    ax.set_title("(f) specific predictability: cultures, mice (dashed)", fontsize=10, loc="left")
     ax.legend(frameon=False, fontsize=7)
 
     fig.tight_layout()

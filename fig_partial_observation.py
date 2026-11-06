@@ -155,7 +155,7 @@ def panel_hc11(ax):
     ax.set_xticks(x)
     ax.set_xticklabels([lab for _, lab in keys], fontsize=8)
     ax.legend(frameon=False, fontsize=6.5)
-    ax.set_title(f"(e) rat CA1, 8 sessions, 36-102 units", loc="left", fontsize=10)
+    ax.set_title(f"(e) rat CA1, 8 sessions, 26-102 units", loc="left", fontsize=10)
 
 
 def panel_synthesis(ax):

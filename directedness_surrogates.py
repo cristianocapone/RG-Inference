@@ -50,7 +50,7 @@ def directedness_surr(S, surr, n_surr=3, seed=0):
     rng = np.random.default_rng(seed)
     sa, sy = np.mean([_parts(surr(S, rng), (1,)) for _ in range(n_surr)], 0)
     A, Y = a - sa, y - sy
-    return float(A / (A + Y)) if A + Y > 0 else np.nan
+    return np.array([A / (A + Y) if A + Y > 0 else np.nan, A, Y, a, y], float)   # [fraction, excess antisym., excess sym., raw antisym., raw sym.]
 
 
 def standard(S, rng):
@@ -143,9 +143,9 @@ def run_allen():
             for k, v in res.items():
                 store[f"{key}/{k}"] = v
             store[f"{key}/segments"] = len(onsets)
-            print(f"  {ses} {c:20s} ({len(onsets):4d} segments of {nb} bins): std {res['std']:.3f}/{res['spont_std']:.3f}  "
-                  f"locked surrogate {res['pres']:.3f}/{res['spont_pres']:.3f}  psth-subtracted {res['psth']:.3f}/{res['spont_psth']:.3f}  "
-                  f"rate-matched {res['ratematched']:.3f}/{res['spont_ratematched']:.3f}   (stimulus/spontaneous)", flush=True)
+            print(f"  {ses} {c:20s} ({len(onsets):4d} segments of {nb} bins): std {res['std'][0]:.3f}/{res['spont_std'][0]:.3f}  "
+                  f"locked surrogate {res['pres'][0]:.3f}/{res['spont_pres'][0]:.3f} (A ratio {res['pres'][1] / res['std'][1]:.2f})  psth-subtracted {res['psth'][0]:.3f}/{res['spont_psth'][0]:.3f}  "
+                  f"rate-matched {res['ratematched'][0]:.3f}/{res['spont_ratematched'][0]:.3f}   (stimulus/spontaneous)", flush=True)
         np.savez(OUT, **store)
         print(f"{ses} done [{time.time() - t0:.0f} s]", flush=True)
 
@@ -174,7 +174,7 @@ def run_ca1():
         spikes, epochs, states = load(url)
         segs = {"Maze": [epochs[k] for k in epochs if "maze" in k.lower()]}
         if states is not None:
-            for lab in ("REM", "NREM"):
+            for lab in ("REM", "Non-REM"):
                 m = states["label"] == lab
                 segs[lab] = [(a, b) for a, b in zip(states["start"][m], states["stop"][m]) if b - a > 0]
         rng = np.random.default_rng(2)
@@ -198,8 +198,8 @@ def run_ca1():
                         Bj = np.concatenate([binned(jitter([spikes[i] for i in sel], w, rng_), a, b, dt) for a, b in sg])
                         return Bj.astype(np.float32)
                     store[f"{key}/jit{int(w * 1000)}"] = directedness_surr(S, surr)
-                print(f"  {ses} {name:5s} {int(dt * 1000):2d} ms: {len(sel):3d} units, std {store[f'{key}/std']:.3f}  "
-                      f"vs jitter 25 ms {store[f'{key}/jit25']:.3f}  100 ms {store[f'{key}/jit100']:.3f}", flush=True)
+                print(f"  {ses} {name:7s} {int(dt * 1000):2d} ms: {len(sel):3d} units, std {store[f'{key}/std'][0]:.3f}  antisym. power surviving jitter: "
+                      f"25 ms {store[f'{key}/jit25'][1] / store[f'{key}/std'][1]:.2f}  100 ms {store[f'{key}/jit100'][1] / store[f'{key}/std'][1]:.2f}", flush=True)
         np.savez(OUT_CA1, **store)
         print(f"{ses} done [{time.time() - t0:.0f} s]", flush=True)
 
@@ -218,8 +218,9 @@ def summary():
             for s in ses:
                 k = f"allen/{s}/{c}"
                 if f"{k}/std" in store:
-                    rows.append([store[f"{k}/{q}"] - store[f"{k}/spont_{q}"] for q in ("std", "pres", "psth", "ratematched")] +
-                                [store[f"{k}/{q}"] for q in ("std", "pres", "psth", "ratematched")])
+                    rows.append([store[f"{k}/{q}"][0] - store[f"{k}/spont_{q}"][0] for q in ("std", "pres", "psth", "ratematched")] +
+                                [store[f"{k}/{q}"][0] for q in ("std", "pres", "psth", "ratematched")] +
+                                [store[f"{k}/pres"][1] / store[f"{k}/std"][1], store[f"{k}/spont_pres"][1] / store[f"{k}/spont_std"][1]])
             if len(rows) < 3:
                 continue
             r = np.array(rows)
@@ -227,16 +228,17 @@ def summary():
                 v = v[~np.isnan(v)]
                 return f"{v.mean():+.3f} ({np.sum(v > 0)}/{len(v)}, p={wilcoxon(v).pvalue if len(v) >= 5 else np.nan:.2g})"
             print(f"  {c:20s} n={len(r):2d}: standard {fmt(r[:, 0])} | locked surrogate {fmt(r[:, 1])} | psth-subtracted {fmt(r[:, 2])} | rate-matched {fmt(r[:, 3])}"
-                  f"  [{np.nanmean(r[:, 4]):.3f} {np.nanmean(r[:, 5]):.3f} {np.nanmean(r[:, 6]):.3f} {np.nanmean(r[:, 7]):.3f}]")
+                  f"  [levels {np.nanmean(r[:, 4]):.3f} {np.nanmean(r[:, 5]):.3f} {np.nanmean(r[:, 6]):.3f} {np.nanmean(r[:, 7]):.3f}; antisym. power surviving the locked surrogate: stimulus {np.nanmean(r[:, 8]):.2f}, spontaneous {np.nanmean(r[:, 9]):.2f}]")
     ses = sorted({k.split("/")[1] for k in store if k.startswith("ca1/")})
     if ses:
         print(f"\n=== CA1, {len(ses)} sessions: directedness against shift (standard) and jitter surrogates")
-        for name in ("Maze", "REM", "NREM"):
+        for name in ("Maze", "REM", "Non-REM"):
             for dt in (10, 20):
-                rows = np.array([[store[f"ca1/{s}/{name}/{dt}/std"], store[f"ca1/{s}/{name}/{dt}/jit25"], store[f"ca1/{s}/{name}/{dt}/jit100"]]
+                rows = np.array([[store[f"ca1/{s}/{name}/{dt}/std"][0], store[f"ca1/{s}/{name}/{dt}/jit25"][1] / store[f"ca1/{s}/{name}/{dt}/std"][1],
+                                  store[f"ca1/{s}/{name}/{dt}/jit100"][1] / store[f"ca1/{s}/{name}/{dt}/std"][1]]
                                  for s in ses if f"ca1/{s}/{name}/{dt}/std" in store])
                 if len(rows):
-                    print(f"  {name:5s} {dt:2d} ms n={len(rows)}: standard {np.nanmean(rows[:, 0]):.3f}  excess over 25-ms jitter {np.nanmean(rows[:, 1]):.3f}  over 100-ms jitter {np.nanmean(rows[:, 2]):.3f}")
+                    print(f"  {name:7s} {dt:2d} ms n={len(rows)}: directedness {np.nanmean(rows[:, 0]):.3f}  fraction of the antisymmetric excess power surviving a jitter of 25 ms {np.nanmean(rows[:, 1]):.2f} (range {np.nanmin(rows[:, 1]):.2f}-{np.nanmax(rows[:, 1]):.2f}), of 100 ms {np.nanmean(rows[:, 2]):.2f} ({np.nanmin(rows[:, 2]):.2f}-{np.nanmax(rows[:, 2]):.2f})")
 
 
 if __name__ == "__main__":

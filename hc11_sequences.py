@@ -41,8 +41,8 @@ def load(url):
     epochs = {lab.decode() if isinstance(lab, bytes) else str(lab): (float(s), float(e))
               for lab, s, e in zip(ep["label"][()], ep["start_time"][()], ep["stop_time"][()])}
     states = None
-    if "processing/behavior/states" in f:
-        g = f["processing/behavior/states"]
+    if "processing/behavior/sleep_states" in f:
+        g = f["processing/behavior/sleep_states"]
         try:
             states = {"label": read_strings(g["label"]), "start": g["start_time"][()], "stop": g["stop_time"][()]}
         except Exception as e:

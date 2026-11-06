@@ -84,6 +84,7 @@ Tested with Python 3.12, numpy 2.4, scipy 1.17, matplotlib, scikit-learn 1.9.
 | Suppl.: advantage per RG step, LOO/permutation, 5-fold CV, Allen unit count | `a2_stats.py` (reads `results/closure_cv.npz` from `closure_cv.py`) |
 | Suppl.: scaling observables (variance, silence, autocorrelation time, spectrum) under the rules | `rg_observables.py` (`plot` re-draws) |
 | Suppl.: block compactness, spatial (Kadanoff) rule, bursts, global mode in the cultures | `culture_mechanism.py` (`plot` re-draws) |
+| Suppl.: origin of the in-vivo directedness (presentation-aligned and PSTH-subtracted surrogates, rate matching, spike jitter) | `directedness_surrogates.py allen|ca1|summary` |
 | Suppl.: in vivo at 2/5/10 ms, nMF vs ridge vs ML couplings | `invivo_binsize.py stringer|cache|allen|summary` (Allen spike times cached in `data/allen_cache/`) |
 
 **Exploratory analyses with negative or inconclusive results.** They are kept for completeness and are not used in the paper.

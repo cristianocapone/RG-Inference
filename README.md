@@ -86,6 +86,7 @@ Tested with Python 3.12, numpy 2.4, scipy 1.17, matplotlib, scikit-learn 1.9.
 | Suppl.: block compactness, spatial (Kadanoff) rule, bursts, global mode in the cultures | `culture_mechanism.py` (`plot` re-draws) |
 | Suppl.: origin of the in-vivo directedness (presentation-aligned and PSTH-subtracted surrogates, rate matching, spike jitter) | `directedness_surrogates.py allen|ca1|summary` |
 | Suppl.: what the inversion adds to the lagged statistics (row weight vs off-diagonal C^-1), cultures and Allen | `decomposition_inversion.py cultures|allen` |
+| Suppl.: closure with multi-lag (VAR, ARMA) and nonlinear (random-feature) predictors on the same partitions, cultures and Allen; latent-input-aware inference variants | `closure_ar.py cultures|allen|summary|plot` (`robust` for the random-feature settings), `latent_inference.py cultures|allen` |
 | Suppl.: in vivo at 2/5/10 ms, nMF vs ridge vs ML couplings | `invivo_binsize.py stringer|cache|allen|summary` (Allen spike times cached in `data/allen_cache/`) |
 
 **Exploratory analyses with negative or inconclusive results.** They are kept for completeness and are not used in the paper.
